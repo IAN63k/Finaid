@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necesario en debug para que Flutter se conecte al VM service (hot reload). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
