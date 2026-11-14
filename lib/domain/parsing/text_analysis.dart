@@ -249,6 +249,16 @@ class CounterpartyExtractor {
       TransactionKind.transferIn => const ['de', 'desde'],
       TransactionKind.refund => const ['de', 'en'],
       TransactionKind.withdrawal => const ['en'],
+      TransactionKind.billPayment => const [
+          'factura de',
+          'factura',
+          'servicio de',
+          'recarga a',
+          'recarga',
+          'en',
+          'a',
+          'de',
+        ],
       _ => const ['en', 'a'],
     };
     final after = from > 0 && from < text.length ? text.substring(from) : '';
