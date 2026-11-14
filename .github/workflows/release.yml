@@ -24,6 +24,11 @@ jobs:
           channel: stable
           cache: true
 
+      # El repo no versiona los archivos que genera Flutter (iconos mipmap, wrapper de
+      # Gradle, local.properties). `flutter create` no sobreescribe los existentes.
+      - name: Complete platform scaffold
+        run: flutter create . --project-name finaid --org co --platforms android
+
       - name: Install dependencies
         run: flutter pub get
 
