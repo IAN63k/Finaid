@@ -11,8 +11,6 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  # `any` para que resuelva a la versión que fija flutter_localizations.
-  intl: any
   flutter_riverpod: ^2.6.1
   sqflite: ^2.4.1
   path: ^1.9.0
