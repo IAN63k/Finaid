@@ -9,6 +9,7 @@ import '../../core/utils/text_tools.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/raw_notification.dart';
+import '../../domain/entities/transaction.dart';
 import '../../domain/parsing/parse_result.dart';
 import '../../domain/usecases/ingest_notification.dart';
 

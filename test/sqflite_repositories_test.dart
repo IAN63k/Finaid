@@ -4,8 +4,7 @@ import 'package:finaid/domain/entities/transaction.dart';
 import 'package:finaid/infrastructure/db/app_database.dart';
 import 'package:finaid/infrastructure/repositories/sqflite_repositories.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' hide Transaction;
 
 import 'support/fixtures.dart';
 

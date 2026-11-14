@@ -1,4 +1,4 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' hide Transaction;
 
 import '../../domain/entities/merchant_rule.dart';
 import '../../domain/entities/raw_notification.dart';
