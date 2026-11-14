@@ -40,9 +40,11 @@ las convierte en movimientos categorizados y te da recomendaciones sobre tu gast
    flutter doctor --android-licenses
    ```
 
-2. Completa los archivos de plataforma que no se versionan (iconos, `ios/`, wrapper).
-   `flutter create` **no sobreescribe** archivos existentes, así que el código del
-   proyecto queda intacto:
+2. Genera los archivos de plataforma que no se versionan: la capa Gradle de `android/`
+   (`settings.gradle.kts`, `build.gradle.kts`, wrapper), los iconos y la carpeta `ios/`.
+   Se dejan fuera del repo a propósito para que siempre coincidan con tu versión de
+   Flutter (3.47 exige Gradle 9.3+). `flutter create` **no sobreescribe** archivos
+   existentes, así que el manifest, el Kotlin y el código Dart quedan intactos:
 
    ```bash
    flutter create . --project-name finaid --org co --platforms android,ios --empty
@@ -105,7 +107,9 @@ docs/              ARQUITECTURA.md, IOS.md, GIT_WORKFLOW.md
 ```
 
 Más detalle en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md). Flujo de ramas, commits y
-versiones en [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md).
+versiones en [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md). Guía paso a paso para instalar
+el APK o correr en modo desarrollo en tu celular:
+[docs/PRUEBA_EN_CELULAR.md](docs/PRUEBA_EN_CELULAR.md).
 
 ## Añadir un banco o un formato nuevo
 

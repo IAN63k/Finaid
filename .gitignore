@@ -34,3 +34,11 @@ ios/Runner.xcworkspace/xcuserdata/
 # Misc
 .DS_Store
 *.log
+
+# Capa Gradle generada por `flutter create .` (debe coincidir con el Flutter instalado;
+# Flutter 3.47 exige Gradle >= 9.3.1). No se versiona: ver README "Puesta en marcha".
+android/build.gradle.kts
+android/settings.gradle.kts
+android/gradle.properties
+android/gradle/
+android/app/build.gradle.kts

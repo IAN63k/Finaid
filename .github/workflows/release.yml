@@ -24,8 +24,9 @@ jobs:
           channel: stable
           cache: true
 
-      # El repo no versiona los archivos que genera Flutter (iconos mipmap, wrapper de
-      # Gradle, local.properties). `flutter create` no sobreescribe los existentes.
+      # El repo no versiona la capa Gradle ni los iconos que genera Flutter, para que
+      # siempre coincidan con la versión de Flutter instalada (3.47 exige Gradle 9.3+).
+      # `flutter create` no sobreescribe los archivos existentes (manifest, Kotlin, res).
       - name: Complete platform scaffold
         run: flutter create . --project-name finaid --org co --platforms android
 
