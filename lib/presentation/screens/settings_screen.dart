@@ -229,7 +229,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Center(
-            child: Text('Finaid 0.1.0',
+            child: Text('Finaid 0.1.1',
                 style: Theme.of(context)
                     .textTheme
                     .labelSmall
