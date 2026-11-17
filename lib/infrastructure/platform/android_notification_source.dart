@@ -7,12 +7,45 @@ import '../../domain/entities/bank.dart';
 import '../../domain/entities/raw_notification.dart';
 import '../../domain/ports/notification_source.dart';
 
+/// App que ha emitido notificaciones en este teléfono (solo package y conteo).
+class SeenPackage {
+  const SeenPackage({
+    required this.package,
+    required this.label,
+    required this.count,
+    required this.lastSeen,
+  });
+
+  final String package;
+  final String label;
+  final int count;
+  final DateTime lastSeen;
+}
+
+/// Estado del servicio nativo de escucha.
+class ListenerStatus {
+  const ListenerStatus({
+    required this.permissionGranted,
+    required this.listenerConnected,
+    required this.batteryUnrestricted,
+    required this.canPostNotifications,
+  });
+
+  final bool permissionGranted;
+  final bool listenerConnected;
+  final bool batteryUnrestricted;
+  final bool canPostNotifications;
+
+  bool get healthy => permissionGranted && listenerConnected;
+}
+
 /// Puente con `FinaidNotificationListenerService` (Kotlin).
 ///
 /// * Las notificaciones que llegan con la app viva se reciben por el
 ///   `EventChannel`.
 /// * Las que llegaron con la app cerrada quedan en una tabla SQLite nativa y se
-///   recogen con `drainPending` al abrir o volver a primer plano.
+///   recogen con `drainPending` al abrir o volver a primer plano. Antes de drenar
+///   se le pide al servicio que revise la bandeja, por si el sistema lo suspendió.
 class AndroidNotificationSource implements NotificationSource {
   AndroidNotificationSource({
     MethodChannel? methodChannel,
@@ -36,25 +69,50 @@ class AndroidNotificationSource implements NotificationSource {
   Future<bool> isAvailable() async => Platform.isAndroid;
 
   @override
-  Future<bool> hasPermission() async {
-    try {
-      return await _methods.invokeMethod<bool>('isPermissionGranted') ?? false;
-    } on MissingPluginException {
-      return false;
-    }
-  }
+  Future<bool> hasPermission() => _bool('isPermissionGranted');
 
   @override
-  Future<void> requestPermission() => _methods.invokeMethod('openSettings');
+  Future<void> requestPermission() => _call('openSettings');
+
+  Future<bool> isListenerConnected() => _bool('isListenerConnected');
+
+  Future<bool> isBatteryUnrestricted() => _bool('isBatteryUnrestricted');
+
+  Future<void> openBatterySettings() => _call('openBatterySettings');
+
+  Future<bool> hasPostNotificationPermission() =>
+      _bool('hasPostNotificationPermission');
+
+  Future<void> requestPostNotificationPermission() =>
+      _call('requestPostNotificationPermission');
 
   /// Pide al sistema volver a enlazar el servicio (útil tras conceder permiso).
-  Future<void> requestRebind() async {
+  Future<void> requestRebind() => _call('requestRebind');
+
+  Future<ListenerStatus> status() async => ListenerStatus(
+        permissionGranted: await hasPermission(),
+        listenerConnected: await isListenerConnected(),
+        batteryUnrestricted: await isBatteryUnrestricted(),
+        canPostNotifications: await hasPostNotificationPermission(),
+      );
+
+  /// Revisa las notificaciones que siguen en la bandeja. Devuelve cuántas
+  /// nuevas entraron al buffer, o -1 si el servicio no está conectado.
+  Future<int> scanActiveNotifications() async {
     try {
-      await _methods.invokeMethod('requestRebind');
+      return await _methods.invokeMethod<int>('scanActiveNotifications') ?? 0;
     } on PlatformException {
-      // No crítico.
+      return 0;
+    } on MissingPluginException {
+      return 0;
     }
   }
+
+  Future<void> showCaptureNotification({
+    required String title,
+    required String body,
+  }) =>
+      _call('showCaptureNotification', {'title': title, 'body': body});
 
   @override
   Stream<RawNotification> get stream => _controller.stream;
@@ -72,6 +130,7 @@ class AndroidNotificationSource implements NotificationSource {
 
   @override
   Future<List<RawNotification>> drainPending() async {
+    await scanActiveNotifications();
     try {
       final list = await _methods.invokeListMethod<dynamic>('drainPending');
       return (list ?? const [])
@@ -88,14 +147,53 @@ class AndroidNotificationSource implements NotificationSource {
     return list ?? const [];
   }
 
-  Future<void> setAllowedPackages(Iterable<String> packages) => _methods
-      .invokeMethod('setAllowedPackages', {'packages': packages.toList()});
+  Future<void> setAllowedPackages(Iterable<String> packages) =>
+      _call('setAllowedPackages', {'packages': packages.toList()});
+
+  Future<List<SeenPackage>> seenPackages() async {
+    try {
+      final list = await _methods.invokeListMethod<dynamic>('getSeenPackages');
+      return [
+        for (final raw in list ?? const [])
+          if (raw is Map)
+            SeenPackage(
+              package: raw['package'] as String,
+              label: (raw['label'] as String?) ?? raw['package'] as String,
+              count: (raw['count'] as num?)?.toInt() ?? 0,
+              lastSeen: DateTime.fromMillisecondsSinceEpoch(
+                  (raw['lastSeen'] as num?)?.toInt() ?? 0),
+            ),
+      ];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
 
   @override
   Future<void> dispose() async {
     await _subscription?.cancel();
     _subscription = null;
     await _controller.close();
+  }
+
+  Future<bool> _bool(String method) async {
+    try {
+      return await _methods.invokeMethod<bool>(method) ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> _call(String method, [Map<String, Object?>? args]) async {
+    try {
+      await _methods.invokeMethod<void>(method, args);
+    } on MissingPluginException {
+      // Plataforma sin canal (tests, escritorio).
+    } on PlatformException {
+      // No crítico.
+    }
   }
 
   static RawNotification? fromPlatformMap(dynamic raw) {
@@ -109,7 +207,8 @@ class AndroidNotificationSource implements NotificationSource {
         ? NotificationChannel.sms
         : NotificationChannel.androidListener;
     return RawNotification(
-      id: m['id'] as String? ?? '${package}_${DateTime.now().microsecondsSinceEpoch}',
+      id: m['id'] as String? ??
+          '${package}_${DateTime.now().microsecondsSinceEpoch}',
       sourcePackage: package,
       title: m['title'] as String?,
       text: text,

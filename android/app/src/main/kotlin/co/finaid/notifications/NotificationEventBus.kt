@@ -5,14 +5,16 @@ import android.os.Looper
 import io.flutter.plugin.common.EventChannel
 
 /**
- * Puente en memoria entre el servicio de escucha y el EventChannel de Flutter.
- * Si Flutter no está escuchando, la notificación simplemente queda en el
- * buffer SQLite y se drena después.
+ * Puente en memoria entre el servicio de escucha y el EventChannel del motor Flutter
+ * de la interfaz. Si nadie escucha, la notificación queda en el buffer SQLite y la
+ * procesa el motor en segundo plano.
  */
 object NotificationEventBus {
 
     @Volatile
     var sink: EventChannel.EventSink? = null
+
+    val hasListener: Boolean get() = sink != null
 
     private val mainHandler = Handler(Looper.getMainLooper())
 

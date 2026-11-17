@@ -20,6 +20,7 @@ import '../infrastructure/platform/android_notification_source.dart';
 import '../infrastructure/platform/deeplink_notification_source.dart';
 import '../infrastructure/repositories/sqflite_repositories.dart';
 import '../infrastructure/settings/app_settings_store.dart';
+import 'capture_notification_text.dart';
 import 'ingestion_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -96,12 +97,24 @@ final notificationSourcesProvider = Provider<List<NotificationSource>>((ref) {
 });
 
 final ingestionServiceProvider = Provider<IngestionService>((ref) {
+  final android = ref.watch(androidSourceProvider);
   final service = IngestionService(
     sources: ref.watch(notificationSourcesProvider),
     ingest: ref.watch(ingestUseCaseProvider),
     onTransactionsChanged: () =>
         ref.read(transactionsProvider.notifier).reload(),
-    onResumed: () => ref.invalidate(permissionStatusProvider),
+    onResumed: () {
+      ref.invalidate(permissionStatusProvider);
+      ref.invalidate(listenerStatusProvider);
+    },
+    notifyCapture: android == null
+        ? null
+        : (transaction) async {
+            if (!ref.read(settingsProvider).notifyCaptures) return;
+            final text = CaptureNotificationText.of(transaction);
+            await android.showCaptureNotification(
+                title: text.title, body: text.body);
+          },
   );
   ref.onDispose(service.dispose);
   return service;
@@ -112,6 +125,21 @@ final permissionStatusProvider = FutureProvider<bool>((ref) async {
   final android = ref.watch(androidSourceProvider);
   if (android == null) return true;
   return android.hasPermission();
+});
+
+/// Estado completo del servicio nativo (solo Android; `null` en otras plataformas).
+final listenerStatusProvider = FutureProvider<ListenerStatus?>((ref) async {
+  final android = ref.watch(androidSourceProvider);
+  if (android == null) return null;
+  return android.status();
+});
+
+/// Apps que han emitido notificaciones en este teléfono.
+final seenPackagesProvider =
+    FutureProvider.autoDispose<List<SeenPackage>>((ref) async {
+  final android = ref.watch(androidSourceProvider);
+  if (android == null) return const [];
+  return android.seenPackages();
 });
 
 // ---------------------------------------------------------------------------
@@ -134,6 +162,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
     }
     return _update(state.copyWith(enabledPackages: next));
   }
+
+  Future<void> setNotifyCaptures(bool enabled) =>
+      _update(state.copyWith(notifyCaptures: enabled));
+
+  Future<void> setExpectedIncome(int? minor) => _update(
+        minor == null || minor <= 0
+            ? state.copyWith(clearExpectedIncome: true)
+            : state.copyWith(expectedMonthlyIncomeMinor: minor),
+      );
 
   /// Sincroniza la lista de packages con el servicio nativo.
   Future<void> pushToPlatform() async {
@@ -244,9 +281,11 @@ final monthSummaryProvider = Provider<MonthSummary>((ref) {
 final insightsProvider = Provider<List<Insight>>((ref) {
   final transactions = ref.watch(allTransactionsProvider);
   final budgets = ref.watch(budgetsProvider).valueOrNull ?? const {};
+  final settings = ref.watch(settingsProvider);
   return ref.watch(insightEngineProvider).generate(
         transactions: transactions,
         budgets: budgets,
+        expectedIncomeMinor: settings.expectedMonthlyIncomeMinor,
       );
 });
 

@@ -24,8 +24,10 @@ data class PendingNotification(
 }
 
 /**
- * Buffer nativo de notificaciones pendientes + lista de packages permitidos.
- * Flutter lo drena cuando la app abre o vuelve a primer plano.
+ * Buffer nativo de notificaciones pendientes, memoria de claves ya vistas (para no
+ * re-entregar lo que sigue en la bandeja), apps detectadas y lista de packages
+ * permitidos. Flutter lo drena cuando la app abre, vuelve a primer plano o desde el
+ * motor en segundo plano.
  */
 class NotificationStore private constructor(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DB_NAME, null, DB_VERSION) {
@@ -46,26 +48,63 @@ class NotificationStore private constructor(context: Context) :
             )
             """.trimIndent()
         )
+        createV2Tables(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // v1: sin migraciones todavía.
+        if (oldVersion < 2) createV2Tables(db)
     }
 
-    /** @return false si ya existía (misma dedupe_key). */
-    fun insert(n: PendingNotification): Boolean {
-        val values = ContentValues().apply {
-            put("id", n.id)
-            put("pkg", n.packageName)
-            put("title", n.title)
-            put("body", n.text)
-            put("posted_at", n.postedAt)
-            put("dedupe_key", n.dedupeKey)
-        }
-        val row = writableDatabase.insertWithOnConflict(
-            "pending", null, values, SQLiteDatabase.CONFLICT_IGNORE
+    private fun createV2Tables(db: SQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS seen_keys (dedupe_key TEXT PRIMARY KEY, ts INTEGER NOT NULL)"
         )
-        return row != -1L
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS seen_packages (
+                pkg TEXT PRIMARY KEY,
+                count INTEGER NOT NULL DEFAULT 0,
+                last_seen INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+
+    /**
+     * Inserta la notificación si su clave no se había visto antes.
+     * @return false si ya estaba en el buffer o ya fue entregada.
+     */
+    fun insert(n: PendingNotification): Boolean {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val seen = ContentValues().apply {
+                put("dedupe_key", n.dedupeKey)
+                put("ts", n.postedAt)
+            }
+            val seenRow = db.insertWithOnConflict(
+                "seen_keys", null, seen, SQLiteDatabase.CONFLICT_IGNORE
+            )
+            if (seenRow == -1L) {
+                db.setTransactionSuccessful()
+                return false
+            }
+            val values = ContentValues().apply {
+                put("id", n.id)
+                put("pkg", n.packageName)
+                put("title", n.title)
+                put("body", n.text)
+                put("posted_at", n.postedAt)
+                put("dedupe_key", n.dedupeKey)
+            }
+            val row = db.insertWithOnConflict(
+                "pending", null, values, SQLiteDatabase.CONFLICT_IGNORE
+            )
+            db.setTransactionSuccessful()
+            return row != -1L
+        } finally {
+            db.endTransaction()
+        }
     }
 
     /** Devuelve y borra todo lo pendiente, de forma atómica. */
@@ -95,9 +134,54 @@ class NotificationStore private constructor(context: Context) :
                 }
             }
             db.delete("pending", null, null)
+            // Olvida claves viejas para que la tabla no crezca sin límite.
+            val cutoff = System.currentTimeMillis() - SEEN_KEYS_TTL_MS
+            db.delete("seen_keys", "ts < ?", arrayOf(cutoff.toString()))
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
+        }
+        return out
+    }
+
+    fun pendingCount(): Int {
+        readableDatabase.rawQuery("SELECT COUNT(*) FROM pending", null).use { c ->
+            return if (c.moveToFirst()) c.getInt(0) else 0
+        }
+    }
+
+    /** Registra que una app emitió una notificación (solo package y conteo, sin contenido). */
+    fun recordSeen(pkg: String, at: Long) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("pkg", pkg)
+            put("count", 0)
+            put("last_seen", at)
+        }
+        db.insertWithOnConflict("seen_packages", null, values, SQLiteDatabase.CONFLICT_IGNORE)
+        db.execSQL(
+            "UPDATE seen_packages SET count = count + 1, last_seen = ? WHERE pkg = ?",
+            arrayOf<Any>(at, pkg)
+        )
+    }
+
+    fun seenPackages(): List<Map<String, Any?>> {
+        val out = mutableListOf<Map<String, Any?>>()
+        readableDatabase.query(
+            "seen_packages", null, null, null, null, null, "last_seen DESC", "200"
+        ).use { c ->
+            val pkgIdx = c.getColumnIndexOrThrow("pkg")
+            val countIdx = c.getColumnIndexOrThrow("count")
+            val lastIdx = c.getColumnIndexOrThrow("last_seen")
+            while (c.moveToNext()) {
+                out.add(
+                    mapOf(
+                        "package" to c.getString(pkgIdx),
+                        "count" to c.getInt(countIdx),
+                        "lastSeen" to c.getLong(lastIdx),
+                    )
+                )
+            }
         }
         return out
     }
@@ -113,9 +197,10 @@ class NotificationStore private constructor(context: Context) :
 
     companion object {
         private const val DB_NAME = "finaid_native.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
         private const val PREFS_NAME = "finaid_native"
         private const val KEY_ALLOWED = "allowed_packages"
+        private const val SEEN_KEYS_TTL_MS = 14L * 24 * 60 * 60 * 1000
 
         @Volatile
         private var instance: NotificationStore? = null

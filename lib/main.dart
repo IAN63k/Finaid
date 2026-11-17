@@ -4,6 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'application/providers.dart';
+// Entrypoint del motor en segundo plano (@pragma vm:entry-point). Debe estar
+// en el grafo de imports para que se compile en release.
+// ignore: unused_import
+import 'background.dart';
 import 'infrastructure/db/app_database.dart';
 
 Future<void> main() async {

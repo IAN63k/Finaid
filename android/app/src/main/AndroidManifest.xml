@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Para mostrar el nombre de las apps bancarias en Ajustes (Android 11+). -->
+    <!-- Aviso propio cuando se registra un movimiento (Android 13+ lo pide en runtime). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Diálogo para que el sistema no "duerma" el servicio de escucha (Samsung, Xiaomi...). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Para mostrar el nombre de las apps detectadas en Ajustes (Android 11+). -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />

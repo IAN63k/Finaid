@@ -3,29 +3,34 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../domain/entities/raw_notification.dart';
+import '../domain/entities/transaction.dart';
 import '../domain/ports/notification_source.dart';
 import '../domain/usecases/ingest_notification.dart';
 
 /// Conecta las fuentes de notificaciones con el caso de uso de ingesta.
 /// Escucha en vivo, recoge lo pendiente al arrancar y cada vez que la app
-/// vuelve a primer plano.
+/// vuelve a primer plano. Cuando registra un movimiento con la app fuera de
+/// pantalla, pide un aviso al sistema.
 class IngestionService with WidgetsBindingObserver {
   IngestionService({
     required this.sources,
     required this.ingest,
     required this.onTransactionsChanged,
     this.onResumed,
+    this.notifyCapture,
   });
 
   final List<NotificationSource> sources;
   final IngestNotificationUseCase ingest;
   final VoidCallback onTransactionsChanged;
   final VoidCallback? onResumed;
+  final Future<void> Function(Transaction transaction)? notifyCapture;
 
   final List<StreamSubscription<RawNotification>> _subscriptions = [];
   final List<NotificationSource> _active = [];
   bool _started = false;
   bool _draining = false;
+  bool _inForeground = true;
 
   Future<void> start() async {
     if (_started) return;
@@ -62,7 +67,12 @@ class IngestionService with WidgetsBindingObserver {
   Future<bool> handle(RawNotification notification, {bool notify = true}) async {
     try {
       final result = await ingest(notification);
-      if (result.isNewTransaction && notify) onTransactionsChanged();
+      if (result.isNewTransaction) {
+        if (notify) onTransactionsChanged();
+        if (!_inForeground && notifyCapture != null) {
+          await notifyCapture!(result.transaction!);
+        }
+      }
       return result.isNewTransaction;
     } catch (e, st) {
       debugPrint('Finaid: error ingiriendo notificación: $e\n$st');
@@ -72,8 +82,11 @@ class IngestionService with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _inForeground = state == AppLifecycleState.resumed;
     if (state == AppLifecycleState.resumed) {
       onResumed?.call();
+      // El motor en segundo plano pudo haber guardado movimientos mientras tanto.
+      onTransactionsChanged();
       drainAll();
     }
   }
