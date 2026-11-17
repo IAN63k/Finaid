@@ -69,6 +69,12 @@ void main() {
     final back = (await repo.byId('n1'))!;
     expect(back.fullText, 'Nequi. Compraste \$25.000 en RAPPI');
     expect(back.channel, NotificationChannel.androidListener);
+
+    final recent = await repo.recent();
+    expect(recent.single.status, 'ignored');
+    expect(recent.single.reason, 'sin_monto');
+    expect((await repo.byStatus('ignored')).single.id, 'n1');
+    expect(await repo.byStatus('parsed'), isEmpty);
   });
 
   test('reglas y presupuestos', () async {

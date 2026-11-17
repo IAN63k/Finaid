@@ -114,6 +114,37 @@ void main() {
     expect(t.ignored, isTrue);
   });
 
+  test('el registro de recibidas conserva estado y motivo', () async {
+    await ingest(raw(
+      package: Samples.nequiPackage,
+      text: Samples.nequiCompra,
+      postedAt: DateTime(2026, 11, 1, 10),
+    ));
+    await ingest(raw(
+      package: Samples.smsPackage,
+      title: 'Bancolombia',
+      text: Samples.bancolombiaOtp,
+      postedAt: DateTime(2026, 11, 2, 10),
+    ));
+    final recent = await raws.recent();
+    expect(recent.length, 2);
+    expect(recent.first.status, 'ignored');
+    expect(recent.first.reason, 'codigo_seguridad');
+    expect(recent.last.status, 'parsed');
+    expect((await raws.byStatus('ignored')).length, 1);
+  });
+
+  test('reprocesar ignoradas no duplica ni inventa movimientos', () async {
+    await ingest(raw(
+      package: Samples.smsPackage,
+      title: 'Bancolombia',
+      text: Samples.bancolombiaOtp,
+    ));
+    expect(await ingest.reprocessIgnored(), 0);
+    expect(await transactions.all(), isEmpty);
+    expect((await raws.byStatus('ignored')).length, 1);
+  });
+
   test('movimiento manual: ingreso registrado a mano', () async {
     final edits = EditTransactionUseCases(
         transactions: transactions, merchantRules: rules);

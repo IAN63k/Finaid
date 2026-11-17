@@ -91,4 +91,9 @@ class Samples {
       'BBVA te informa que ingresaste a la App el 2026-11-14 a las 17:01 desde el dispositivo SM-S938B.';
   static const nequiEnvioExitoso =
       'Tu envío por \$20.000 a MARIA GOMEZ fue exitoso.';
+
+  /// Formato real capturado en un Galaxy S26 Ultra (2026-11-17).
+  static const nequiTeEnvioTitle = 'Envío';
+  static const nequiTeEnvio = 'KAROL CASTANEDA te envió 50, ¡lo mejor!';
+  static const nequiPagoSinSimbolo = 'Pagaste 12000 en TIENDA DONA ROSA.';
 }

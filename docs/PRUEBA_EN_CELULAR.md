@@ -178,6 +178,19 @@ captura funcione con Finaid cerrado:
 Aunque el servicio se desconecte un rato, al abrir Finaid se revisan las notificaciones
 que sigan en la bandeja, así que no se pierde lo que aún esté visible.
 
+### Segundo: Ajustes → Notificaciones recibidas
+
+Esta pantalla muestra todo lo que llegó a Finaid desde las apps activadas y qué se hizo
+con cada notificación:
+
+- **Registrada**: se creó el movimiento.
+- **Ignorada** con motivo ("No se encontró un monto", "código de seguridad"…): llegó
+  bien, pero el parser no la entendió o la descartó a propósito. Si crees que es un
+  movimiento real, copia el texto y compártelo para mejorar el parser; tras actualizar
+  la app, **Reprocesar ignoradas** las recupera sin volver a hacer el pago.
+- Si una notificación bancaria **no aparece aquí**, el problema es la captura: revisa
+  el servicio, la batería y "Apps detectadas".
+
 ### Si tu banco no está en la lista o cambió de package
 
 Ajustes → Fuentes → **Apps detectadas en este teléfono**: ahí aparecen todas las apps

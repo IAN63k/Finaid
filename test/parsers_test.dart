@@ -228,6 +228,44 @@ void main() {
     });
   });
 
+  group('Nequi (formato real sin símbolo de pesos)', () {
+    test('"X te envió 50" es ingreso de 50 pesos con remitente', () {
+      final t = registry
+          .parse(raw(
+            package: Samples.nequiPackage,
+            title: Samples.nequiTeEnvioTitle,
+            text: Samples.nequiTeEnvio,
+          ))
+          .transaction!;
+      expect(t.kind, TransactionKind.transferIn);
+      expect(t.amountMinor, 5000);
+      expect(t.currency, 'COP');
+      expect(t.merchantRaw, 'KAROL CASTANEDA');
+      expect(t.bankId, 'nequi');
+      expect(t.confidence, closeTo(0.9, 0.001));
+    });
+
+    test('pago sin símbolo ni separador', () {
+      final t = registry
+          .parse(raw(
+            package: Samples.nequiPackage,
+            text: Samples.nequiPagoSinSimbolo,
+          ))
+          .transaction!;
+      expect(t.kind, TransactionKind.purchase);
+      expect(t.amountMinor, 1200000);
+      expect(t.merchantRaw, 'TIENDA DONA ROSA');
+    });
+
+    test('un número suelto sin verbo sigue sin ser un movimiento', () {
+      final outcome = registry.parse(raw(
+        package: Samples.nequiPackage,
+        text: 'Tu código de verificación es 482913.',
+      ));
+      expect(outcome.isTransaction, isFalse);
+    });
+  });
+
   group('Nequi (formato "tu envío ... fue exitoso")', () {
     test('se detecta como transferencia enviada', () {
       final t = registry

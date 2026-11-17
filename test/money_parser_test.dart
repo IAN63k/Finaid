@@ -20,6 +20,23 @@ void main() {
     });
   });
 
+  group('MoneyParser.parseBare', () {
+    test('toma el número que sigue al verbo', () {
+      final m = MoneyParser.parseBare('KAROL CASTANEDA te envio 50, lo mejor!');
+      expect(m!.amountMinor, 5000);
+      expect(MoneyParser.parseBare('Pagaste 12000 en TIENDA')!.amountMinor,
+          1200000);
+      expect(MoneyParser.parseBare('Compraste 25.000 en RAPPI')!.amountMinor,
+          2500000);
+    });
+
+    test('ignora años y números pegados a fechas u horas', () {
+      expect(MoneyParser.parseBare('ingresaste el 2026/11/14 a las 17:01'),
+          isNull);
+      expect(MoneyParser.parseBare('Pago de 2026'), isNull);
+    });
+  });
+
   group('MoneyParser.parseFirst', () {
     test('encuentra el monto con símbolo', () {
       final m = MoneyParser.parseFirst(

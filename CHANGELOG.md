@@ -7,6 +7,26 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-17
+
+Primera notificación real de Nequi capturada en el S26 Ultra pero descartada por el
+parser: "KAROL CASTANEDA te envió 50, ¡lo mejor!" no tiene símbolo de pesos ni
+separador de miles.
+
+### Corregido
+
+- Montos sin `$` ni separador ("te envió 50", "Pagaste 12000 en …") cuando hay un verbo
+  transaccional; la confianza baja un poco para marcarlos como revisables si hace falta.
+- Verbos de ingreso de Nequi: "te envió", "te mandó", "metiste", "recargaste tu".
+- Remitente antes del verbo ("X te envió …").
+
+### Añadido
+
+- Ajustes → **Notificaciones recibidas**: registro de todo lo que llegó de las apps
+  activadas, con estado (registrada, ignorada y motivo, duplicada) y el texto original.
+- Botón **Reprocesar ignoradas** para recuperar movimientos tras una mejora del parser.
+- Ejemplo real de Nequi en el simulador.
+
 ## [0.2.0] - 2026-11-16
 
 Captura robusta en segundo plano y registro manual. Motivado por la primera prueba real
@@ -75,7 +95,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/IAN63k/Finaid/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/IAN63k/Finaid/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/IAN63k/Finaid/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/IAN63k/Finaid/releases/tag/v0.1.0
