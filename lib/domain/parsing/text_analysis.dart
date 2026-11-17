@@ -62,6 +62,12 @@ class KindDetector {
     'le enviaste',
     'enviado a',
     'envio a ',
+    'envio por',
+    'envio con llave',
+    'pago con llave',
+    'tu envio',
+    'envio exitoso',
+    'envio realizado',
     'transferencia exitosa',
     'transferencia realizada',
     'plata enviada',
@@ -229,7 +235,8 @@ class CounterpartyExtractor {
     r'\s+(?:con\s|desde\s|por\s|a\s+las\s|hoy\b|ayer\b|el\s+(?:dia\s+)?\d|'
     r'tarjeta\b|t\.\s?[cd]|tc\b|td\b|tdc\b|tdb\b|cta\b|cuenta\b|ref\b|'
     r'saldo\b|cupo\b|si\s+no\b|puedes\b|usando\b|mediante\b|via\b|'
-    r'aprobad[ao]\b|exitos[ao]\b|realizad[ao]\b|terminada\b|'
+    r'aprobad[ao]\b|exitos[ao]\b|realizad[ao]\b|terminada\b|fue\b|'
+    r'registrad[ao]\b|que\s+enviaste\b|recibi[o]\b|'
     r'en\s+tu\b|a\s+tu\b|de\s+tu\b|en\s+la\s+cuenta\b|'
     r'\*|\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}:\d{2}|\$|cop\b)'
     r'|[,;:!?¿¡\n]|\.(?=\s|$)',
@@ -241,9 +248,24 @@ class CounterpartyExtractor {
     'cuenta', 'tarjeta', 'nequi', 'bancolombia', 'daviplata', 'cajero',
   };
 
+  /// "ROBIN IBARRA recibió el valor de $17.000 que enviaste" (BBVA, llaves Bre-B):
+  /// el destinatario va antes del verbo.
+  static final RegExp _receiverBeforeVerb = RegExp(
+    r"([A-Za-z][A-Za-z .'\-]{2,60}?)\s+recibio\s+"
+    r'(?:el\s+valor|la\s+suma|el\s+pago|el\s+dinero|un\s+pago|tu\s+(?:envio|pago|transferencia)|\$)',
+    caseSensitive: false,
+  );
+
   /// [text] debe venir sin tildes (conservando mayúsculas). [from] es la
   /// posición donde terminó el monto; primero se busca después de él.
   static String? extract(String text, TransactionKind kind, {int from = 0}) {
+    if (kind == TransactionKind.transferOut) {
+      final m = _receiverBeforeVerb.firstMatch(text);
+      if (m != null) {
+        final cleaned = clean(m.group(1)!);
+        if (_isValid(cleaned)) return cleaned;
+      }
+    }
     final preps = switch (kind) {
       TransactionKind.transferOut => const ['a', 'para', 'hacia'],
       TransactionKind.transferIn => const ['de', 'desde'],
@@ -272,15 +294,16 @@ class CounterpartyExtractor {
         final m = regex.firstMatch(hay);
         if (m == null) continue;
         final cleaned = clean(m.group(1)!);
-        if (cleaned.length >= 2 &&
-            !_stopwords.contains(cleaned.toLowerCase()) &&
-            RegExp(r'[A-Za-z]').hasMatch(cleaned)) {
-          return cleaned;
-        }
+        if (_isValid(cleaned)) return cleaned;
       }
     }
     return null;
   }
+
+  static bool _isValid(String cleaned) =>
+      cleaned.length >= 2 &&
+      !_stopwords.contains(cleaned.toLowerCase()) &&
+      RegExp(r'[A-Za-z]').hasMatch(cleaned);
 
   static RegExp _prepRegex(String prep) {
     final guard = switch (prep) {
@@ -335,6 +358,10 @@ class DateTimeExtractor {
   DateTimeExtractor._();
 
   static final RegExp _date = RegExp(r'(?<!\d)(\d{1,2})/(\d{1,2})/(\d{2,4})(?!\d)');
+
+  /// `2026/11/14` o `2026-11-14` (BBVA, Nu).
+  static final RegExp _isoDate =
+      RegExp(r'(?<!\d)(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?!\d)');
   static final RegExp _time = RegExp(
     r'(?<!\d)(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?',
     caseSensitive: false,
@@ -344,13 +371,22 @@ class DateTimeExtractor {
     int? year;
     int? month;
     int? day;
+    final iso = _isoDate.firstMatch(text);
     final dm = _date.firstMatch(text);
-    if (dm != null) {
+    if (iso != null) {
+      year = int.parse(iso.group(1)!);
+      month = int.parse(iso.group(2)!);
+      day = int.parse(iso.group(3)!);
+    } else if (dm != null) {
       day = int.parse(dm.group(1)!);
       month = int.parse(dm.group(2)!);
       year = int.parse(dm.group(3)!);
       if (year < 100) year += 2000;
-      if (month < 1 || month > 12 || day < 1 || day > 31) {
+    }
+    if (year != null) {
+      final m = month!;
+      final d = day!;
+      if (m < 1 || m > 12 || d < 1 || d > 31) {
         day = month = year = null;
       }
     }

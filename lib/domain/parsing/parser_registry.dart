@@ -29,7 +29,16 @@ class ParserRegistry {
   final List<BankParser> _parsers;
   final BankParser _fallback;
 
+  /// El package de la app que notificó manda; la firma en el texto es el
+  /// respaldo (SMS, apps desconocidas). Así "enviaste a su llave registrada en
+  /// Nequi" desde la app de BBVA se atribuye a BBVA.
   BankParser resolve(RawNotification notification) {
+    final byPackage = KnownBanks.byPackage(notification.sourcePackage);
+    if (byPackage != null) {
+      for (final p in _parsers) {
+        if (p.bankId == byPackage.id) return p;
+      }
+    }
     for (final p in _parsers) {
       if (p.canHandle(notification)) return p;
     }
