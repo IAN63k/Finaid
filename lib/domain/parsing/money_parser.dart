@@ -74,6 +74,37 @@ class MoneyParser {
     return results;
   }
 
+  /// Nequi y otras billeteras a veces no ponen símbolo ni separador de miles:
+  /// "KAROL te envió 50", "Pagaste 12000 en TIENDA". Solo se usa cuando ya se
+  /// detectó un verbo transaccional y [parseFirst] no encontró nada. El número
+  /// debe ir justo después del verbo o de "por/de/valor de".
+  static final RegExp _bareAfterVerb = RegExp(
+    r'(?:envio|enviaste|compraste|pagaste|recibiste|retiraste|pasaste|'
+    r'llegaron|transferiste|mandaste|sacaste|metiste|recargaste|recibio|'
+    r'valor de|suma de|total de|por|de)\s+\$?\s?'
+    r'(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?![\d/:%])',
+    caseSensitive: false,
+  );
+
+  static ParsedMoney? parseBare(String text) {
+    for (final m in _bareAfterVerb.allMatches(text)) {
+      final number = m.group(1)!;
+      final minor = toMinor(number);
+      if (minor <= 0) continue;
+      final whole = minor ~/ 100;
+      final looksLikeYear =
+          !number.contains(RegExp(r'[.,]')) && whole >= 1990 && whole <= 2100;
+      if (looksLikeYear) continue;
+      return ParsedMoney(
+        amountMinor: minor,
+        currency: 'COP',
+        start: m.start,
+        end: m.end,
+      );
+    }
+    return null;
+  }
+
   static String _currencyOf(String? marker) {
     final m = (marker ?? '').toUpperCase();
     if (m == 'USD' || m == 'US\$' || m == 'U\$' || m.startsWith('DOL')) {

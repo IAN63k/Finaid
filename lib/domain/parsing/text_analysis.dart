@@ -27,6 +27,11 @@ class KindDetector {
     'te llegaron',
     'te llego ',
     'te enviaron',
+    'te envio',
+    'te mando',
+    'te paso ',
+    'metiste',
+    'recargaste tu',
     'te transfirieron',
     'te consignaron',
     'consignacion',
@@ -251,16 +256,27 @@ class CounterpartyExtractor {
   /// "ROBIN IBARRA recibió el valor de $17.000 que enviaste" (BBVA, llaves Bre-B):
   /// el destinatario va antes del verbo.
   static final RegExp _receiverBeforeVerb = RegExp(
-    r"([A-Za-z][A-Za-z .'\-]{2,60}?)\s+recibio\s+"
+    r"([A-Za-z][A-Za-z '\-]{2,60}?)\s+recibio\s+"
     r'(?:el\s+valor|la\s+suma|el\s+pago|el\s+dinero|un\s+pago|tu\s+(?:envio|pago|transferencia)|\$)',
+    caseSensitive: false,
+  );
+
+  /// "KAROL CASTANEDA te envió 50" (Nequi): el remitente va antes del verbo.
+  static final RegExp _senderBeforeVerb = RegExp(
+    r"([A-Za-z][A-Za-z '\-]{2,60}?)\s+te\s+(?:envio|mando|paso|transfirio|consigno|pago)\b",
     caseSensitive: false,
   );
 
   /// [text] debe venir sin tildes (conservando mayúsculas). [from] es la
   /// posición donde terminó el monto; primero se busca después de él.
   static String? extract(String text, TransactionKind kind, {int from = 0}) {
-    if (kind == TransactionKind.transferOut) {
-      final m = _receiverBeforeVerb.firstMatch(text);
+    final beforeVerb = switch (kind) {
+      TransactionKind.transferOut => _receiverBeforeVerb,
+      TransactionKind.transferIn => _senderBeforeVerb,
+      _ => null,
+    };
+    if (beforeVerb != null) {
+      final m = beforeVerb.firstMatch(text);
       if (m != null) {
         final cleaned = clean(m.group(1)!);
         if (_isValid(cleaned)) return cleaned;

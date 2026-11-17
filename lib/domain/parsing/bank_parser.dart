@@ -49,14 +49,19 @@ class SpanishBankParser implements BankParser {
     final noise = NoiseFilter.reason(norm, hasVerb: hasVerb);
     if (noise != null) return ParseOutcome.ignored(noise);
 
-    final money = MoneyParser.parseFirst(original);
+    final plain = TextTools.removeDiacritics(original);
+    var bareAmount = false;
+    var money = MoneyParser.parseFirst(original);
+    if (money == null && hasVerb) {
+      money = MoneyParser.parseBare(plain);
+      bareAmount = money != null;
+    }
     if (money == null) return const ParseOutcome.ignored('sin_monto');
 
     if (!hasVerb && !NoiseFilter.looksTransactional(norm)) {
       return const ParseOutcome.ignored('sin_verbo');
     }
 
-    final plain = TextTools.removeDiacritics(original);
     final merchant =
         CounterpartyExtractor.extract(plain, detected.kind, from: money.end) ??
             '';
@@ -73,6 +78,7 @@ class SpanishBankParser implements BankParser {
     if (resolvedBank.id != KnownBanks.unknown.id) confidence += 0.2;
     if (merchant.isNotEmpty) confidence += 0.2;
     if (detected.strong) confidence += 0.2;
+    if (bareAmount) confidence -= 0.1;
 
     return ParseOutcome.transaction(ParsedTransaction(
       amountMinor: money.amountMinor,
