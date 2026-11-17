@@ -67,6 +67,28 @@ class InMemoryRawNotificationRepository implements RawNotificationRepository {
 
   @override
   Future<int> count() async => _items.length;
+
+  @override
+  Future<List<RawNotificationRecord>> recent({int limit = 100}) async {
+    final all = _items.values.toList()
+      ..sort((a, b) => b.postedAt.compareTo(a.postedAt));
+    return [
+      for (final n in all.take(limit))
+        RawNotificationRecord(
+          notification: n,
+          status: status[n.id]?.status ?? 'pending',
+          reason: status[n.id]?.reason,
+        ),
+    ];
+  }
+
+  @override
+  Future<List<RawNotification>> byStatus(String wanted,
+          {int limit = 300}) async =>
+      _items.values
+          .where((n) => (status[n.id]?.status ?? 'pending') == wanted)
+          .take(limit)
+          .toList();
 }
 
 class InMemoryMerchantRuleRepository implements MerchantRuleRepository {

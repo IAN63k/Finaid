@@ -123,18 +123,43 @@ class SqfliteRawNotificationRepository implements RawNotificationRepository {
   @override
   Future<RawNotification?> byId(String id) async {
     final rows = await _db.query(_table, where: 'id = ?', whereArgs: [id]);
-    if (rows.isEmpty) return null;
-    final r = rows.first;
-    return RawNotification(
-      id: r['id'] as String,
-      sourcePackage: r['source_package'] as String,
-      title: r['title'] as String?,
-      text: r['body'] as String,
-      postedAt: DateTime.fromMillisecondsSinceEpoch(r['posted_at'] as int),
-      channel: NotificationChannelX.fromName(r['channel'] as String),
-      dedupeKey: r['dedupe_key'] as String?,
-    );
+    return rows.isEmpty ? null : _fromRow(rows.first);
   }
+
+  @override
+  Future<List<RawNotificationRecord>> recent({int limit = 100}) async {
+    final rows =
+        await _db.query(_table, orderBy: 'posted_at DESC', limit: limit);
+    return [
+      for (final r in rows)
+        RawNotificationRecord(
+          notification: _fromRow(r),
+          status: (r['status'] as String?) ?? 'pending',
+          reason: r['reason'] as String?,
+        ),
+    ];
+  }
+
+  @override
+  Future<List<RawNotification>> byStatus(String status,
+      {int limit = 300}) async {
+    final rows = await _db.query(_table,
+        where: 'status = ?',
+        whereArgs: [status],
+        orderBy: 'posted_at ASC',
+        limit: limit);
+    return rows.map(_fromRow).toList();
+  }
+
+  static RawNotification _fromRow(Map<String, Object?> r) => RawNotification(
+        id: r['id'] as String,
+        sourcePackage: r['source_package'] as String,
+        title: r['title'] as String?,
+        text: r['body'] as String,
+        postedAt: DateTime.fromMillisecondsSinceEpoch(r['posted_at'] as int),
+        channel: NotificationChannelX.fromName(r['channel'] as String),
+        dedupeKey: r['dedupe_key'] as String?,
+      );
 
   @override
   Future<void> save(RawNotification n) => _db.insert(

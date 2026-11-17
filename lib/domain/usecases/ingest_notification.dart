@@ -56,7 +56,23 @@ class IngestNotificationUseCase {
       return const IngestResult.duplicate('notificacion_repetida');
     }
     await rawNotifications.save(raw);
+    return _process(raw);
+  }
 
+  /// Vuelve a pasar por el parser las notificaciones que se ignoraron. Útil
+  /// cuando una actualización entiende un formato nuevo. Devuelve cuántas
+  /// transacciones nuevas se crearon.
+  Future<int> reprocessIgnored() async {
+    final ignored = await rawNotifications.byStatus('ignored');
+    var created = 0;
+    for (final raw in ignored) {
+      final result = await _process(raw);
+      if (result.isNewTransaction) created++;
+    }
+    return created;
+  }
+
+  Future<IngestResult> _process(RawNotification raw) async {
     final outcome = registry.parse(raw);
     if (!outcome.isTransaction) {
       final reason = outcome.ignoreReason ?? 'desconocido';

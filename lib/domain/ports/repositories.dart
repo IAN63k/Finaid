@@ -23,6 +23,21 @@ abstract class TransactionRepository {
   Future<void> delete(String id);
 }
 
+/// Notificación cruda junto con lo que se hizo con ella.
+class RawNotificationRecord {
+  const RawNotificationRecord({
+    required this.notification,
+    required this.status,
+    this.reason,
+  });
+
+  final RawNotification notification;
+
+  /// `pending`, `parsed`, `ignored` o `duplicate`.
+  final String status;
+  final String? reason;
+}
+
 abstract class RawNotificationRepository {
   Future<bool> existsByDedupeKey(String dedupeKey);
   Future<RawNotification?> byId(String id);
@@ -30,6 +45,12 @@ abstract class RawNotificationRepository {
   Future<void> markProcessed(String id,
       {required String status, String? reason});
   Future<int> count();
+
+  /// Últimas notificaciones recibidas, más recientes primero (diagnóstico).
+  Future<List<RawNotificationRecord>> recent({int limit = 100});
+
+  /// Notificaciones con un estado dado (p. ej. `ignored` para reprocesar).
+  Future<List<RawNotification>> byStatus(String status, {int limit = 300});
 }
 
 abstract class MerchantRuleRepository {

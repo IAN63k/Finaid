@@ -11,11 +11,12 @@ import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
+import 'capture_log_screen.dart';
 import 'detected_apps_screen.dart';
 import 'merchant_rules_screen.dart';
 import 'simulate_notification_screen.dart';
 
-const String appVersionLabel = 'Finaid 0.2.0';
+const String appVersionLabel = 'Finaid 0.2.1';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -196,6 +197,15 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const MerchantRulesScreen())),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.inbox_outlined),
+                  title: const Text('Notificaciones recibidas'),
+                  subtitle: const Text(
+                      'Diagnóstico: qué llegó, qué se registró y qué se ignoró'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const CaptureLogScreen())),
                 ),
                 ListTile(
                   leading: const Icon(Icons.science_outlined),

@@ -12,6 +12,7 @@ import '../../domain/entities/raw_notification.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/parsing/parse_result.dart';
 import '../../domain/usecases/ingest_notification.dart';
+import '../widgets/ignore_reason_label.dart';
 
 class _Sample {
   const _Sample(this.label, this.package, this.title, this.text);
@@ -40,6 +41,12 @@ const List<_Sample> _samples = [
     'com.bbva.nxt_colombia',
     'Ingreso a App BBVA',
     'BBVA te informa que ingresaste a la App el 2026-11-14 a las 17:01 desde el dispositivo SM-S938B.',
+  ),
+  _Sample(
+    'Nequi te enviaron (real)',
+    'com.nequi.MobileApp',
+    'Envío',
+    'KAROL CASTANEDA te envió 50, ¡lo mejor!',
   ),
   _Sample(
     'Nequi compra',
@@ -293,19 +300,7 @@ class _OutcomeCard extends StatelessWidget {
   final Map<String, String> rows;
   final bool positive;
 
-  static String _reasonLabel(String? reason) => switch (reason) {
-        'codigo_seguridad' => 'Es un código de seguridad / OTP',
-        'rechazada' => 'Transacción rechazada o fallida',
-        'promocion' => 'Parece una promoción',
-        'recordatorio' => 'Es un recordatorio de pago',
-        'seguridad' => 'Aviso de seguridad (inicio de sesión, bloqueo...)',
-        'sin_monto' => 'No se encontró un monto',
-        'sin_verbo' => 'No parece una compra, pago o transferencia',
-        'notificacion_repetida' => 'La misma notificación ya se había procesado',
-        'movimiento_repetido' =>
-          'Ya existe un movimiento igual (push + SMS del mismo banco)',
-        _ => reason ?? 'Desconocido',
-      };
+  static String _reasonLabel(String? reason) => ignoreReasonLabel(reason);
 
   @override
   Widget build(BuildContext context) {
