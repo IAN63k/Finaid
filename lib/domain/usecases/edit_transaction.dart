@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import '../../core/utils/text_tools.dart';
+import '../entities/bank.dart';
 import '../entities/category.dart';
 import '../entities/merchant_rule.dart';
 import '../entities/transaction.dart';
@@ -74,6 +76,35 @@ class EditTransactionUseCases {
 
   Future<void> deleteTransaction(Transaction transaction) =>
       transactions.delete(transaction.id);
+
+  /// Movimiento registrado a mano (ingresos en efectivo, compras sin
+  /// notificación, etc.).
+  Future<Transaction> addManual({
+    required int amountMinor,
+    required TransactionKind kind,
+    required String description,
+    required String categoryId,
+    required DateTime occurredAt,
+    String currency = 'COP',
+    String? note,
+  }) async {
+    final transaction = Transaction(
+      id: _uuid.v4(),
+      amountMinor: amountMinor,
+      currency: currency,
+      kind: kind,
+      merchantRaw: description.trim(),
+      merchantKey: TextTools.merchantKey(description),
+      bankId: KnownBanks.manual.id,
+      occurredAt: occurredAt,
+      categoryId: categoryId,
+      categorySource: CategorySource.manual,
+      confidence: 1.0,
+      note: note,
+    );
+    await transactions.save(transaction);
+    return transaction;
+  }
 
   Future<void> _upsertRule(String merchantKey,
       {String? categoryId, bool? ignore}) async {

@@ -30,22 +30,34 @@ const List<_Sample> _samples = [
     'Bancolombia le informa Compra por \$45.900,00 en EXITO CALLE 80 a las 14:33. 12/11/2026 T.Cred *1234. Inquietudes al 6045109095.',
   ),
   _Sample(
+    'BBVA envío con llave',
+    'com.bbva.nxt_colombia',
+    'Tu envío con llave fue exitoso',
+    '2026/11/14 17:02 ROBIN IBARRA HURTADO recibió el valor de \$ 17.000,00 que enviaste a su llave *****4032 registrada en Nequi. Si no reconoces la operación, comunícate al 01 8000 912 227.',
+  ),
+  _Sample(
+    'BBVA inicio de sesión (se ignora)',
+    'com.bbva.nxt_colombia',
+    'Ingreso a App BBVA',
+    'BBVA te informa que ingresaste a la App el 2026-11-14 a las 17:01 desde el dispositivo SM-S938B.',
+  ),
+  _Sample(
     'Nequi compra',
     'com.nequi.MobileApp',
     'Nequi',
-    'Compraste \$25.000 en RAPPI con tu tarjeta Nequi *4321. Tu saldo ahora es \$150.000.',
+    'Compraste \$25.000 en RAPPI con tu tarjeta Nequi *4321.',
   ),
   _Sample(
     'Nequi envío',
     'com.nequi.MobileApp',
     'Nequi',
-    '¡Listo! Enviaste \$30.000 a Juan Perez. Tu saldo es \$120.000.',
+    '¡Listo! Tu envío por \$30.000 a Juan Perez fue exitoso.',
   ),
   _Sample(
     'DaviPlata ingreso',
     'com.davivienda.daviplataapp',
     'DaviPlata',
-    'Te llegaron \$200.000 de MARIA LOPEZ. Saldo: \$350.000',
+    'Te llegaron \$200.000 de MARIA LOPEZ.',
   ),
   _Sample(
     'Nu suscripción',

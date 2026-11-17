@@ -9,9 +9,13 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
+import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
+import 'detected_apps_screen.dart';
 import 'merchant_rules_screen.dart';
 import 'simulate_notification_screen.dart';
+
+const String appVersionLabel = 'Finaid 0.2.0';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -19,7 +23,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final permission = ref.watch(permissionStatusProvider);
+    final status = ref.watch(listenerStatusProvider).valueOrNull;
     final budgets = ref.watch(budgetsProvider).valueOrNull ?? const {};
     final rules = ref.watch(merchantRulesProvider).valueOrNull ?? const [];
     final android = ref.watch(androidSourceProvider);
@@ -35,62 +39,35 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
-          const SectionTitle('Lectura de notificaciones'),
-          Card(
-            elevation: 0,
-            child: Column(
-              children: [
-                ListTile(
-                  leading: Icon(
-                    permission.valueOrNull == true
-                        ? Icons.check_circle
-                        : Icons.error_outline,
-                    color: permission.valueOrNull == true
-                        ? AppTheme.income(context)
-                        : AppTheme.warning(context),
-                  ),
-                  title: Text(
-                    Platform.isAndroid
-                        ? (permission.valueOrNull == true
-                            ? 'Acceso a notificaciones activo'
-                            : 'Acceso a notificaciones desactivado')
-                        : 'Esta plataforma usa el atajo de ingesta',
-                  ),
-                  subtitle: Text(Platform.isAndroid
-                      ? 'Finaid solo lee las apps que elijas abajo. Nunca ve tus claves ni se conecta a tu banco.'
-                      : 'Consulta docs/IOS.md para configurar la automatización de Atajos.'),
-                ),
-                if (android != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Row(
-                      children: [
-                        FilledButton.tonal(
-                          onPressed: () async {
-                            await android.requestPermission();
-                          },
-                          child: const Text('Abrir ajustes del sistema'),
-                        ),
-                        const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () async {
-                            await android.requestRebind();
-                            ref.invalidate(permissionStatusProvider);
-                          },
-                          child: const Text('Volver a comprobar'),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          const SectionTitle('Captura de notificaciones'),
+          if (android == null)
+            const Card(
+              elevation: 0,
+              child: ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('Esta plataforma usa el atajo de ingesta'),
+                subtitle: Text(
+                    'Consulta docs/IOS.md para configurar la automatización de Atajos.'),
+              ),
+            )
+          else
+            _ServiceStatusCard(android: android, status: status),
 
           const SectionTitle('Fuentes que escucha'),
           Card(
             elevation: 0,
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.radar),
+                  title: const Text('Apps detectadas en este teléfono'),
+                  subtitle: const Text(
+                      'Si tu banco no aparece abajo o cambió de package, actívalo desde aquí.'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const DetectedAppsScreen())),
+                ),
+                const Divider(height: 1),
                 for (final bank in KnownBanks.all)
                   SwitchListTile(
                     secondary: CircleAvatar(
@@ -101,8 +78,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: Text(bank.name),
                     subtitle: Text(bank.packages.first,
                         maxLines: 1, overflow: TextOverflow.ellipsis),
-                    value: bank.packages
-                        .any(settings.enabledPackages.contains),
+                    value: bank.packages.any(settings.enabledPackages.contains),
                     onChanged: (v) {
                       final notifier = ref.read(settingsProvider.notifier);
                       for (final p in bank.packages) {
@@ -146,11 +122,45 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SectionTitle('Presupuestos mensuales'),
+          const SectionTitle('Avisos'),
+          Card(
+            elevation: 0,
+            child: SwitchListTile(
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Avisar cuando registre un movimiento'),
+              subtitle: const Text(
+                  'Una notificación de Finaid con el monto, el comercio y la categoría.'),
+              value: settings.notifyCaptures,
+              onChanged: (v) =>
+                  ref.read(settingsProvider.notifier).setNotifyCaptures(v),
+            ),
+          ),
+
+          const SectionTitle('Ingresos y presupuestos'),
           Card(
             elevation: 0,
             child: Column(
               children: [
+                ListTile(
+                  leading: const CategoryAvatar(Categories.ingresos, radius: 16),
+                  title: const Text('Ingreso mensual estimado'),
+                  subtitle: const Text(
+                      'Se usa en los consejos de ahorro cuando el banco no notifica tus ingresos.'),
+                  trailing: Text(
+                    settings.expectedMonthlyIncomeMinor == null
+                        ? 'Sin definir'
+                        : MoneyFormat.format(settings.expectedMonthlyIncomeMinor!),
+                    style: TextStyle(
+                      color: settings.expectedMonthlyIncomeMinor == null
+                          ? scheme.outline
+                          : scheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => _editExpectedIncome(
+                      context, ref, settings.expectedMonthlyIncomeMinor),
+                ),
+                const Divider(height: 1),
                 for (final c in Categories.expenses)
                   ListTile(
                     leading: CategoryAvatar(c, radius: 16),
@@ -196,17 +206,6 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const SimulateNotificationScreen())),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.sync),
-                  title: const Text('Procesar notificaciones pendientes'),
-                  onTap: () async {
-                    final n =
-                        await ref.read(ingestionServiceProvider).drainAll();
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('$n movimiento${n == 1 ? '' : 's'} nuevo${n == 1 ? '' : 's'}')));
-                  },
-                ),
               ],
             ),
           ),
@@ -229,7 +228,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Center(
-            child: Text('Finaid 0.1.1',
+            child: Text(appVersionLabel,
                 style: Theme.of(context)
                     .textTheme
                     .labelSmall
@@ -265,21 +264,49 @@ class SettingsScreen extends ConsumerWidget {
     await ref.read(settingsProvider.notifier).setPackageEnabled(value, true);
   }
 
+  Future<void> _editExpectedIncome(
+      BuildContext context, WidgetRef ref, int? current) async {
+    final result = await _askPesos(
+      context,
+      title: 'Ingreso mensual estimado',
+      label: 'Lo que recibes al mes, en pesos',
+      current: current,
+    );
+    if (result == null) return;
+    await ref
+        .read(settingsProvider.notifier)
+        .setExpectedIncome(result <= 0 ? null : result);
+  }
+
   Future<void> _editBudget(
       BuildContext context, WidgetRef ref, Category category, int? current) async {
+    final result = await _askPesos(
+      context,
+      title: 'Presupuesto de ${category.name}',
+      label: 'Límite mensual en pesos',
+      current: current,
+    );
+    if (result == null) return;
+    await ref
+        .read(budgetsProvider.notifier)
+        .setBudget(category.id, result <= 0 ? null : result);
+  }
+
+  /// Devuelve unidades menores, 0 para "quitar", o null si se canceló.
+  Future<int?> _askPesos(BuildContext context,
+      {required String title, required String label, int? current}) {
     final controller = TextEditingController(
         text: current == null ? '' : (current ~/ 100).toString());
-    final result = await showDialog<int?>(
+    return showDialog<int?>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Presupuesto de ${category.name}'),
+        title: Text(title),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-              prefixText: '\$ ', labelText: 'Límite mensual en pesos'),
+          decoration: InputDecoration(prefixText: '\$ ', labelText: label),
         ),
         actions: [
           if (current != null)
@@ -298,9 +325,180 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (result == null) return;
-    await ref
-        .read(budgetsProvider.notifier)
-        .setBudget(category.id, result <= 0 ? null : result);
+  }
+}
+
+class _ServiceStatusCard extends ConsumerWidget {
+  const _ServiceStatusCard({required this.android, required this.status});
+
+  final AndroidNotificationSource android;
+  final ListenerStatus? status;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final s = status;
+    final ok = AppTheme.income(context);
+    final warn = AppTheme.warning(context);
+
+    Widget row({
+      required bool? good,
+      required String title,
+      required String subtitle,
+      Widget? action,
+    }) {
+      return ListTile(
+        leading: Icon(
+          good == null
+              ? Icons.hourglass_empty
+              : good
+                  ? Icons.check_circle
+                  : Icons.error_outline,
+          color: good == null ? scheme.outline : (good ? ok : warn),
+        ),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: action,
+      );
+    }
+
+    Future<void> refresh() async {
+      ref.invalidate(listenerStatusProvider);
+      ref.invalidate(permissionStatusProvider);
+    }
+
+    return Card(
+      elevation: 0,
+      child: Column(
+        children: [
+          row(
+            good: s?.permissionGranted,
+            title: 'Acceso a notificaciones',
+            subtitle: s?.permissionGranted == true
+                ? 'Concedido'
+                : 'Sin él Finaid no ve ninguna notificación',
+            action: s?.permissionGranted == true
+                ? null
+                : FilledButton.tonal(
+                    onPressed: () => android.requestPermission(),
+                    child: const Text('Activar'),
+                  ),
+          ),
+          row(
+            good: s?.listenerConnected,
+            title: 'Servicio de escucha',
+            subtitle: s?.listenerConnected == true
+                ? 'Conectado y recibiendo notificaciones'
+                : 'Desconectado: el sistema lo suspendió o aún no lo enlazó',
+            action: s?.listenerConnected == true
+                ? null
+                : TextButton(
+                    onPressed: () async {
+                      await android.requestRebind();
+                      await Future<void>.delayed(const Duration(seconds: 1));
+                      await refresh();
+                    },
+                    child: const Text('Reconectar'),
+                  ),
+          ),
+          row(
+            good: s?.batteryUnrestricted,
+            title: 'Batería sin restricciones',
+            subtitle: s?.batteryUnrestricted == true
+                ? 'Android no suspenderá el servicio en segundo plano'
+                : 'Recomendado: evita que el sistema "duerma" a Finaid',
+            action: s?.batteryUnrestricted == true
+                ? null
+                : TextButton(
+                    onPressed: () => android.openBatterySettings(),
+                    child: const Text('Permitir'),
+                  ),
+          ),
+          row(
+            good: s?.canPostNotifications,
+            title: 'Avisos de Finaid',
+            subtitle: s?.canPostNotifications == true
+                ? 'Puede avisarte cuando registre un movimiento'
+                : 'Permite las notificaciones de Finaid para recibir avisos',
+            action: s?.canPostNotifications == true
+                ? null
+                : TextButton(
+                    onPressed: () async {
+                      await android.requestPostNotificationPermission();
+                      await Future<void>.delayed(const Duration(seconds: 2));
+                      await refresh();
+                    },
+                    child: const Text('Permitir'),
+                  ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final found = await android.scanActiveNotifications();
+                      final ingested =
+                          await ref.read(ingestionServiceProvider).drainAll();
+                      await refresh();
+                      if (!context.mounted) return;
+                      final msg = found < 0
+                          ? 'El servicio no está conectado. Toca "Reconectar" o revisa el permiso.'
+                          : ingested == 0
+                              ? 'No hay notificaciones nuevas en la bandeja'
+                              : '$ingested movimiento${ingested == 1 ? '' : 's'} nuevo${ingested == 1 ? '' : 's'}';
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(msg)));
+                    },
+                    icon: const Icon(Icons.manage_search),
+                    label: const Text('Buscar en la bandeja'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'Volver a comprobar',
+                  onPressed: refresh,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+          ),
+          ExpansionTile(
+            leading: const Icon(Icons.phone_android),
+            title: const Text('Si tienes Samsung (One UI)'),
+            subtitle: const Text(
+                'One UI suspende las apps que no usas y desconecta el servicio'),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            children: [
+              Text(
+                '1. Ajustes → Batería → Límites de uso en segundo plano → '
+                '"Apps que nunca se suspenden" → agrega Finaid.\n'
+                '2. En la misma pantalla desactiva "Suspender apps que no usas" (o quita a Finaid de las listas de suspensión).\n'
+                '3. Ajustes → Aplicaciones → Finaid → Batería → "Sin restricciones".\n'
+                '4. Ajustes → Aplicaciones → Finaid → Notificaciones → permitir.\n\n'
+                'Aunque el servicio se desconecte un rato, al abrir Finaid se revisan las notificaciones que sigan en la bandeja.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant, height: 1.45),
+              ),
+            ],
+          ),
+          if (Platform.isAndroid)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                'Finaid solo lee las apps activadas abajo. Nunca ve tus claves ni se conecta a tu banco.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

@@ -420,8 +420,9 @@ class SavingsRule extends InsightRule {
 
   @override
   List<Insight> evaluate(InsightContext ctx) {
-    final income = ctx.thisMonthIncome;
+    final income = ctx.effectiveIncome;
     if (income == 0) return const [];
+    final label = ctx.incomeIsEstimated ? 'Ingreso estimado' : 'Ingresos';
     final rate = (income - ctx.thisMonthSpend) / income;
     if (rate >= 0.2) {
       return [
@@ -431,7 +432,7 @@ class SavingsRule extends InsightRule {
           severity: InsightSeverity.positive,
           title: 'Estás ahorrando el ${_pct(rate)} de tus ingresos',
           body:
-              'Ingresos ${_money(income)}, gastos ${_money(ctx.thisMonthSpend)}. Mantener 20% o más es una meta sólida.',
+              '$label ${_money(income)}, gastos ${_money(ctx.thisMonthSpend)}. Mantener 20% o más es una meta sólida.',
           amountMinor: income - ctx.thisMonthSpend,
           score: 30,
         ),
@@ -445,7 +446,7 @@ class SavingsRule extends InsightRule {
           severity: InsightSeverity.warning,
           title: 'Este mes gastas más de lo que ingresa',
           body:
-              'Gastos ${_money(ctx.thisMonthSpend)} frente a ingresos ${_money(income)}. Si es un mes atípico está bien; si se repite, toca ajustar.',
+              'Gastos ${_money(ctx.thisMonthSpend)} frente a ${label.toLowerCase()} ${_money(income)}. Si es un mes atípico está bien; si se repite, toca ajustar.',
           amountMinor: ctx.thisMonthSpend - income,
           score: 85,
         ),

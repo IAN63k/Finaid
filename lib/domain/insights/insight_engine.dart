@@ -30,12 +30,14 @@ class InsightEngine {
   List<Insight> generate({
     required List<Transaction> transactions,
     Map<String, int> budgets = const {},
+    int? expectedIncomeMinor,
     DateTime? now,
   }) {
     final ctx = InsightContext(
       now: now ?? DateTime.now(),
       transactions: transactions,
       budgets: budgets,
+      expectedIncomeMinor: expectedIncomeMinor,
     );
     final out = <Insight>[];
     for (final rule in rules) {

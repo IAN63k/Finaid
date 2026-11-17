@@ -7,6 +7,7 @@ class InsightContext {
     required this.now,
     required List<Transaction> transactions,
     required this.budgets,
+    this.expectedIncomeMinor,
   }) : all = transactions.where((t) => !t.ignored).toList(growable: false) {
     monthStart = Dates.monthStart(now);
     thisMonth = all
@@ -28,6 +29,17 @@ class InsightContext {
 
   /// Presupuestos mensuales por categoría (unidades menores).
   final Map<String, int> budgets;
+
+  /// Ingreso mensual estimado por el usuario, para cuando el banco no
+  /// notifica los ingresos (unidades menores).
+  final int? expectedIncomeMinor;
+
+  /// Ingreso del mes: el detectado si existe, si no el estimado.
+  int get effectiveIncome =>
+      thisMonthIncome > 0 ? thisMonthIncome : (expectedIncomeMinor ?? 0);
+
+  bool get incomeIsEstimated =>
+      thisMonthIncome == 0 && (expectedIncomeMinor ?? 0) > 0;
 
   late final DateTime monthStart;
   late final List<Transaction> thisMonth;

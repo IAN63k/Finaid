@@ -6,6 +6,7 @@ import '../../core/utils/date_utils.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
 import '../widgets/common_widgets.dart';
+import 'manual_transaction_sheet.dart';
 import 'transaction_detail_sheet.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -46,6 +47,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final items = _groupByDay(filtered);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showManualTransactionSheet(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Registrar'),
+      ),
       appBar: AppBar(
         title: const Text('Movimientos'),
         bottom: PreferredSize(
@@ -129,7 +135,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         'No hay movimientos que coincidan con los filtros en este mes.',
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.only(bottom: 96),
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];

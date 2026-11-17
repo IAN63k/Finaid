@@ -73,6 +73,32 @@ class OnboardingScreen extends ConsumerWidget {
                   'Android abrirá la lista de apps con acceso a notificaciones. Activa "Finaid" y vuelve.',
                   style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            android.requestPostNotificationPermission(),
+                        icon: const Icon(Icons.notifications_outlined, size: 18),
+                        label: const Text('Avisos de Finaid'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => android.openBatterySettings(),
+                        icon: const Icon(Icons.battery_saver, size: 18),
+                        label: const Text('Sin restricciones'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'En Samsung y otros fabricantes, "Sin restricciones" evita que el sistema suspenda la escucha en segundo plano.',
+                  style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
                 const SizedBox(height: 12),
               ],
               OutlinedButton(

@@ -149,6 +149,17 @@ class KnownBanks {
     return null;
   }
 
-  static BankProfile byId(String id) =>
-      all.firstWhere((b) => b.id == id, orElse: () => unknown);
+  /// Movimientos que el usuario registra a mano.
+  static const manual = BankProfile(
+    id: 'manual',
+    name: 'Manual',
+    packages: [],
+    signatures: [],
+    color: 0xFF0E7C6B,
+  );
+
+  static BankProfile byId(String id) {
+    if (id == manual.id) return manual;
+    return all.firstWhere((b) => b.id == id, orElse: () => unknown);
+  }
 }

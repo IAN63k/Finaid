@@ -7,6 +7,7 @@ import '../../core/utils/money_format.dart';
 import '../../domain/analytics/month_summary.dart';
 import '../../domain/entities/category.dart';
 import '../widgets/common_widgets.dart';
+import 'manual_transaction_sheet.dart';
 import 'transaction_detail_sheet.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -35,6 +36,11 @@ class DashboardScreen extends ConsumerWidget {
         title: const Text('Finaid',
             style: TextStyle(fontWeight: FontWeight.w800)),
         actions: [
+          IconButton(
+            tooltip: 'Registrar a mano',
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => showManualTransactionSheet(context),
+          ),
           IconButton(
             tooltip: 'Buscar pendientes',
             icon: const Icon(Icons.sync),
