@@ -199,6 +199,50 @@ void main() {
     });
   });
 
+  group('BBVA (llaves Bre-B)', () {
+    test('envío con llave: destinatario antes del verbo y fecha ISO', () {
+      final t = registry
+          .parse(raw(
+            package: Samples.bbvaPackage,
+            title: Samples.bbvaLlaveTitle,
+            text: Samples.bbvaLlave,
+            postedAt: DateTime(2026, 11, 14, 17, 3),
+          ))
+          .transaction!;
+      expect(t.kind, TransactionKind.transferOut);
+      expect(t.amountMinor, 1700000);
+      expect(t.merchantRaw, 'ROBIN IBARRA HURTADO');
+      expect(t.occurredAt, DateTime(2026, 11, 14, 17, 2));
+      expect(t.bankId, 'bbva');
+      expect(t.confidence, 1.0);
+    });
+
+    test('aviso de inicio de sesión se ignora', () {
+      final outcome = registry.parse(raw(
+        package: Samples.bbvaPackage,
+        title: Samples.bbvaLoginTitle,
+        text: Samples.bbvaLogin,
+      ));
+      expect(outcome.isTransaction, isFalse);
+      expect(outcome.ignoreReason, 'seguridad');
+    });
+  });
+
+  group('Nequi (formato "tu envío ... fue exitoso")', () {
+    test('se detecta como transferencia enviada', () {
+      final t = registry
+          .parse(raw(
+            package: Samples.nequiPackage,
+            title: 'Nequi',
+            text: Samples.nequiEnvioExitoso,
+          ))
+          .transaction!;
+      expect(t.kind, TransactionKind.transferOut);
+      expect(t.amountMinor, 2000000);
+      expect(t.merchantRaw, 'MARIA GOMEZ');
+    });
+  });
+
   group('Banco desconocido', () {
     test('se reconoce por firma en el texto', () {
       final n = raw(

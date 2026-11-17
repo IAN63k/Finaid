@@ -153,10 +153,42 @@ Si la app no estaba abierta, el servicio la guarda y la verás al abrir Finaid.
 
 ## D. Qué revisar si no aparece nada
 
+### Primero: la tarjeta "Captura de notificaciones" en Ajustes
+
+Desde la versión 0.2.0, Ajustes muestra cuatro indicadores: **Acceso a notificaciones**,
+**Servicio de escucha** (conectado o no), **Batería sin restricciones** y **Avisos de
+Finaid**. Los cuatro deben estar en verde. El botón **Buscar en la bandeja** revisa las
+notificaciones que todavía están en el panel de notificaciones y registra las que
+falten; úsalo si ves una notificación bancaria que Finaid no tomó.
+
+### Samsung (One UI), incluido el Galaxy S26 Ultra
+
+One UI "duerme" las apps que no usas y desconecta el servicio de escucha. Para que la
+captura funcione con Finaid cerrado:
+
+1. Ajustes → **Batería** → **Límites de uso en segundo plano** → **Apps que nunca se
+   suspenden** → agrega Finaid.
+2. En esa misma pantalla, desactiva **Suspender apps que no usas** (o al menos verifica
+   que Finaid no esté en "Apps suspendidas" ni "Apps en suspensión profunda").
+3. Ajustes → **Aplicaciones** → Finaid → **Batería** → **Sin restricciones** (el botón
+   "Permitir" de la tarjeta de Ajustes de Finaid abre el diálogo equivalente).
+4. Ajustes → Aplicaciones → Finaid → **Notificaciones** → permitidas (para los avisos
+   de captura).
+
+Aunque el servicio se desconecte un rato, al abrir Finaid se revisan las notificaciones
+que sigan en la bandeja, así que no se pierde lo que aún esté visible.
+
+### Si tu banco no está en la lista o cambió de package
+
+Ajustes → Fuentes → **Apps detectadas en este teléfono**: ahí aparecen todas las apps
+que han notificado (solo nombre y conteo, nunca el contenido). Activa tu banco desde
+ahí; el package real queda registrado sin tener que escribirlo.
+
 | Síntoma | Qué mirar |
 | --- | --- |
+| "Servicio de escucha: desconectado" | Toca *Reconectar*. Si vuelve a desconectarse, aplica los pasos de Samsung de arriba. |
 | La tarjeta de Ajustes dice "desactivado" | Falta el permiso: Ajustes de Android → Notificaciones → Acceso a notificaciones (o "Acceso especial de apps") → Finaid. |
-| El permiso está activo pero no llega nada | La app bancaria puede tener un `package` distinto al que trae Finaid. Mira el package con `adb shell pm list packages \| grep -i banco` y agrégalo en Fuentes. |
+| El permiso está activo pero no llega nada | Revisa *Apps detectadas* y activa la app del banco con su package real. Desde el PC también: `adb shell pm list packages \| grep -i banco`. |
 | Llega pero se ignora | Abre Simular notificación con ese texto y pulsa *Solo analizar*: te dirá el motivo (OTP, promoción, sin monto, sin verbo). |
 | Dos movimientos por una compra | Push y SMS con montos distintos o fuera de la ventana de 3 minutos; abre el movimiento duplicado → *Eliminar*. |
 | Algunos fabricantes (Xiaomi, Huawei, Samsung) matan el servicio | Quita a Finaid de la optimización de batería y activa *Inicio automático* en los ajustes del fabricante. |

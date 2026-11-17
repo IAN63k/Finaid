@@ -72,6 +72,20 @@ void main() {
     expect(lastWarning, lessThan(firstNonWarning));
   });
 
+  test('usa el ingreso mensual estimado cuando el banco no notifica ingresos',
+      () {
+    final out = engine.generate(
+      transactions: [
+        tx(cop: 100000, at: DateTime(2026, 11, 5, 19), merchant: 'EXITO', category: 'mercado'),
+      ],
+      expectedIncomeMinor: 1000000 * 100,
+      now: now,
+    );
+    final savings = out.firstWhere((i) => i.kind == InsightKind.savings);
+    expect(savings.severity, InsightSeverity.positive);
+    expect(savings.body, contains('Ingreso estimado'));
+  });
+
   test('MonthSummary excluye ignorados y agrupa por categoría', () {
     final summary = MonthSummary.from(transactions, DateTime(2026, 11));
     expect(summary.expensesMinor, (35900 + 350000 + 25000 + 25000) * 100);

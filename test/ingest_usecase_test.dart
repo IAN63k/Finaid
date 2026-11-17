@@ -114,6 +114,23 @@ void main() {
     expect(t.ignored, isTrue);
   });
 
+  test('movimiento manual: ingreso registrado a mano', () async {
+    final edits = EditTransactionUseCases(
+        transactions: transactions, merchantRules: rules);
+    final t = await edits.addManual(
+      amountMinor: 3500000 * 100,
+      kind: TransactionKind.deposit,
+      description: 'Nómina noviembre',
+      categoryId: 'ingresos',
+      occurredAt: DateTime(2026, 11, 1, 9),
+    );
+    expect(t.bankId, 'manual');
+    expect(t.merchantKey, 'NOMINA NOVIEMBRE');
+    expect(t.categorySource, CategorySource.manual);
+    expect(t.countsAsIncome, isTrue);
+    expect((await transactions.byId(t.id))?.amountMinor, 3500000 * 100);
+  });
+
   test('recategorizar con "aplicar siempre" crea regla y actualiza hermanos',
       () async {
     final first = (await ingest(raw(

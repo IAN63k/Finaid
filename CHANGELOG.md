@@ -7,6 +7,36 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-16
+
+Captura robusta en segundo plano y registro manual. Motivado por la primera prueba real
+en un Galaxy S26 Ultra, donde One UI suspendía el servicio y no se registraban pagos.
+
+### Añadido
+
+- Procesamiento en segundo plano: un motor Flutter sin interfaz (`backgroundMain`)
+  parsea y guarda los movimientos aunque la app esté cerrada.
+- Aviso de Finaid al registrar un movimiento (monto, comercio, categoría), con permiso
+  `POST_NOTIFICATIONS` solicitado desde la app. Se puede desactivar en Ajustes.
+- Escaneo de la bandeja de notificaciones al conectarse el servicio, al abrir la app y
+  con el botón "Buscar en la bandeja".
+- Tarjeta de estado en Ajustes: permiso, servicio conectado, batería sin restricciones y
+  avisos; guía para Samsung One UI; botón para excluir a Finaid de la optimización de
+  batería.
+- Pantalla "Apps detectadas": lista de apps que notifican en el teléfono para activar la
+  escucha con el package real.
+- Registro manual de ingresos y gastos (botón "Registrar" en Movimientos y "+" en
+  Inicio), e "Ingreso mensual estimado" para los consejos de ahorro.
+- Parser: formato de BBVA con llaves Bre-B ("X recibió el valor de $… que enviaste a su
+  llave"), fechas `AAAA/MM/DD`, variantes "tu envío por … fue exitoso".
+
+### Cambiado
+
+- El buffer nativo recuerda las claves ya entregadas para no re-procesar lo que sigue
+  en la bandeja.
+- Los ejemplos del simulador ya no incluyen saldos (los bancos no los envían) e
+  incluyen el formato real de BBVA.
+
 ## [0.1.1] - 2026-11-14
 
 Primera versión con APK publicado (firmado con la llave de debug, solo para pruebas).
@@ -45,6 +75,7 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/IAN63k/Finaid/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/IAN63k/Finaid/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/IAN63k/Finaid/releases/tag/v0.1.0

@@ -81,4 +81,14 @@ class Samples {
   static const nuPromo = 'Conoce tu nuevo cupo preaprobado de \$2.000.000.';
   static const daviviendaFactura =
       'Davivienda: Pago de factura CLARO por \$89.900 realizado exitosamente desde tu cuenta *9876 el 10/11/2026 a las 09:12.';
+
+  static const bbvaPackage = 'com.bbva.nxt_colombia';
+  static const bbvaLlaveTitle = 'Tu envío con llave fue exitoso';
+  static const bbvaLlave =
+      '2026/11/14 17:02 ROBIN IBARRA HURTADO recibió el valor de \$ 17.000,00 que enviaste a su llave *****4032 registrada en Nequi. Si no reconoces la operación, comunícate al 01 8000 912 227.';
+  static const bbvaLoginTitle = 'Ingreso a App BBVA';
+  static const bbvaLogin =
+      'BBVA te informa que ingresaste a la App el 2026-11-14 a las 17:01 desde el dispositivo SM-S938B.';
+  static const nequiEnvioExitoso =
+      'Tu envío por \$20.000 a MARIA GOMEZ fue exitoso.';
 }

@@ -13,7 +13,7 @@ las convierte en movimientos categorizados y te da recomendaciones sobre tu gast
 
 | Capa | Qué resuelve |
 | --- | --- |
-| **Captura** | `NotificationListenerService` en Kotlin filtra las apps bancarias y de SMS que elijas, guarda las notificaciones en un buffer nativo y las entrega a Flutter en vivo o al abrir la app. |
+| **Captura** | `NotificationListenerService` en Kotlin filtra las apps bancarias y de SMS que elijas, guarda las notificaciones en un buffer nativo y las entrega a Flutter en vivo, a un motor Flutter en segundo plano (app cerrada) o al abrir la app. Revisa la bandeja al reconectarse y avisa con una notificación propia cuando registra un movimiento. |
 | **Parsing** | Parsers en Dart por banco (con un parser genérico en español) extraen monto, tipo (compra, pago, transferencia, retiro, ingreso, reembolso), comercio, tarjeta y fecha. Ignoran códigos OTP, promociones, rechazos y avisos de saldo. Deduplican push + SMS del mismo movimiento. |
 | **Categorización** | Reglas por palabras clave con comercios colombianos (Éxito, Rappi, Terpel, Claro, Netflix…) más reglas que el usuario enseña ("aplicar siempre a este comercio"). |
 | **Insights** | Motor determinista local: presupuesto superado o en riesgo, categoría que se dispara vs. promedio, suscripciones detectadas, gastos hormiga, cobros dobles, proyección de cierre de mes, tasa de ahorro, gasto de fin de semana y nocturno. |
