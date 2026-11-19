@@ -7,6 +7,21 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-19
+
+### Añadido
+
+- **Tendencias**, nueva pestaña: gasto por mes de los últimos 6 o 12 meses, total o por
+  categoría.
+  - Gráfico de barras propio (sin dependencias): una serie y un eje, promedio de los
+    meses cerrados como línea punteada, mes en curso rayado (datos parciales), tocar o
+    deslizar para ver cada mes.
+  - Promedio mensual (solo desde el primer mes con datos), mes más alto y cierre
+    estimado del mes en curso frente al promedio.
+  - "Este mes frente a tus últimos 3": cambios por categoría comparados a la misma
+    altura del mes, para que la mitad de mes no parezca un ahorro.
+  - Tabla por mes (gastos, ingresos, balance) con los mismos datos del gráfico.
+
 ## [0.8.0] - 2026-11-19
 
 ### Añadido
@@ -273,7 +288,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/IAN63k/Finaid/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/IAN63k/Finaid/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/IAN63k/Finaid/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/IAN63k/Finaid/compare/v0.7.0...v0.7.1

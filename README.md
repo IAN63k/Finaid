@@ -20,7 +20,7 @@ las convierte en movimientos categorizados y te da recomendaciones sobre tu gast
 | **Parsing** | Parsers en Dart por banco (con un parser genérico en español) extraen monto, tipo (compra, pago, transferencia, retiro, ingreso, reembolso), comercio, tarjeta y fecha. Ignoran códigos OTP, promociones, rechazos y avisos de saldo. Deduplican push + SMS del mismo movimiento. |
 | **Categorización** | Reglas por palabras clave con comercios colombianos (Éxito, Rappi, Terpel, Claro, Netflix…) más reglas que el usuario enseña ("aplicar siempre a este comercio"). |
 | **Insights** | Motor determinista local y alertas de presupuesto al 80% y 100% en cada compra: presupuesto superado o en riesgo, categoría que se dispara vs. promedio, suscripciones detectadas, gastos hormiga, cobros dobles, proyección de cierre de mes, tasa de ahorro, gasto de fin de semana y nocturno. |
-| **UI** | Inicio (resumen del mes, por categoría, consejos), Movimientos (filtros, búsqueda, edición, registro manual), Consejos, Ajustes (permiso, fuentes, presupuestos, reglas, simulador, diagnóstico). |
+| **UI** | Inicio (resumen del mes, por categoría, próximos pagos, consejos), Movimientos (filtros, búsqueda, edición, registro manual), Tendencias (gasto mes a mes y por categoría), Consejos, Ajustes (permiso, fuentes, presupuestos, reglas, simulador, diagnóstico). |
 | **Tus datos** | Respaldo cifrado con contraseña (AES-256) que guardas donde quieras, restauración sin duplicados y exportación a Excel (CSV). |
 
 ## Requisitos
