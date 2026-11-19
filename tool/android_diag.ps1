@@ -20,23 +20,13 @@
 param(
     [string]$Out = (Join-Path $PSScriptRoot "..\diag"),
     [int]$LogLines = 400,
-    [string]$Package = "co.finaid"
+    [string]$Package = "co.finaid",
+    # Serial de adb; por defecto $env:ANDROID_SERIAL o el celular conectado por Wi-Fi.
+    [string]$Serial = $env:ANDROID_SERIAL
 )
 $ErrorActionPreference = "Stop"
-
-if (-not (Get-Command adb -ErrorAction SilentlyContinue)) {
-    Write-Host "adb no está en el PATH. Instálalo con:" -ForegroundColor Red
-    Write-Host "  winget install --id Google.PlatformTools"
-    Write-Host "y abre una terminal nueva. Guía: docs/DESARROLLO.md"
-    exit 1
-}
-$devices = @(adb devices | Select-Object -Skip 1 | Where-Object { $_ -match "\tdevice$" })
-if ($devices.Count -eq 0) {
-    Write-Host "No hay dispositivos conectados. Empareja el celular (docs/DESARROLLO.md):" -ForegroundColor Red
-    Write-Host "  adb pair <IP>:<PUERTO_DE_VINCULACION>   (código de 6 dígitos)"
-    Write-Host "  adb connect <IP>:<PUERTO>"
-    exit 1
-}
+. (Join-Path $PSScriptRoot "adb_common.ps1")
+Initialize-Adb $Serial | Out-Null
 
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $file = Join-Path (Resolve-Path $Out) ("diag-{0}.txt" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
@@ -84,7 +74,7 @@ function Get-BankNotifications {
     adb shell cmd appops get $Package RUN_ANY_IN_BACKGROUND 2>$null
 
     Section "Apps bancarias y de mensajes instaladas"
-    adb shell pm list packages | ForEach-Object { $_ -replace '^package:', '' } | Where-Object { $_ -match $bankPattern } | Sort-Object
+    adb shell pm list packages --user 0 | ForEach-Object { $_ -replace '^package:', '' } | Where-Object { $_ -match $bankPattern } | Sort-Object
 
     Section "Notificaciones activas de apps bancarias (texto exacto)"
     Get-BankNotifications

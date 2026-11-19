@@ -14,16 +14,18 @@
 #>
 param(
     [string]$Tag,
-    [string]$Repo = "IAN63k/Finaid"
+    [string]$Repo = "IAN63k/Finaid",
+    # Serial de adb; por defecto $env:ANDROID_SERIAL o el celular conectado por Wi-Fi.
+    [string]$Serial = $env:ANDROID_SERIAL
 )
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "adb_common.ps1")
 
-foreach ($cmd in "gh", "adb") {
-    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
-        Write-Host "Falta '$cmd' en el PATH. Ver docs/DESARROLLO.md" -ForegroundColor Red
-        exit 1
-    }
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    Write-Host "Falta 'gh' (GitHub CLI) en el PATH. Ver docs/DESARROLLO.md" -ForegroundColor Red
+    exit 1
 }
+Initialize-Adb $Serial | Out-Null
 
 $dir = Join-Path ([IO.Path]::GetTempPath()) "finaid-apk"
 New-Item -ItemType Directory -Force -Path $dir | Out-Null

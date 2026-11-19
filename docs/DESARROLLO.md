@@ -69,6 +69,37 @@ adb version
 
 Después de reiniciar el celular solo hace falta el paso 5 (el puerto cambia).
 
+### "more than one device/emulator"
+
+Por Wi-Fi el mismo celular suele aparecer **dos veces** en `adb devices`: una con
+`IP:PUERTO` (la de `adb connect`) y otra con un nombre como
+`adb-R5GL73KXVTD-WJAfZj._adb-tls-connect._tcp`, que ADB descubre solo en la red. Con
+dos entradas, cualquier comando sin `-s` falla con `more than one device/emulator`.
+
+Los scripts del proyecto lo resuelven solos: eligen la entrada descubierta por la red,
+porque su nombre no cambia cuando cambian la IP o el puerto. Para comandos sueltos,
+fija el dispositivo una vez por terminal:
+
+```powershell
+$env:ANDROID_SERIAL = "adb-R5GL73KXVTD-WJAfZj._adb-tls-connect._tcp"
+```
+
+O quita la entrada duplicada:
+
+```bash
+adb disconnect 192.168.1.13:45679
+```
+
+O indica el dispositivo en cada comando con `-s`:
+
+```bash
+adb -s adb-R5GL73KXVTD-WJAfZj._adb-tls-connect._tcp shell pm list packages
+```
+
+Si un comando se queda en `waiting for device`, la conexión por IP:puerto se cayó
+(pasa al apagar la pantalla o al renovarse la red). Usa la entrada descubierta por la
+red o vuelve a correr `adb connect`.
+
 ### Scripts del proyecto
 
 Diagnóstico completo (modelo, servicio, batería, bancos instalados, notificaciones
@@ -91,7 +122,7 @@ adb logcat -s FinaidListener FinaidBackground flutter
 ```
 
 ```bash
-adb shell pm list packages | findstr /i "bbva nequi bancolombia davivienda"
+adb shell pm list packages --user 0 | findstr /i "bbva nequi bancolombia davivienda falabella"
 ```
 
 ```bash
