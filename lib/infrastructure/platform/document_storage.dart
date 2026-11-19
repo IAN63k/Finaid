@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 
+import '../../core/external_launch.dart';
+
 class PickedDocument {
   const PickedDocument({required this.bytes, this.name});
 
@@ -33,6 +35,7 @@ class DocumentStorage {
     required String mimeType,
     required Uint8List bytes,
   }) async {
+    ExternalLaunch.notify();
     try {
       return await _channel.invokeMethod<String>('saveDocument', {
         'fileName': fileName,
@@ -49,6 +52,7 @@ class DocumentStorage {
 
   /// Devuelve el archivo elegido, o `null` si el usuario canceló.
   Future<PickedDocument?> open({List<String> mimeTypes = const []}) async {
+    ExternalLaunch.notify();
     try {
       final m = await _channel.invokeMapMethod<String, dynamic>(
           'openDocument', {'mimeTypes': mimeTypes});
