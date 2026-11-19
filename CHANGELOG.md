@@ -7,6 +7,19 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-19
+
+### Corregido
+
+- "Crear respaldo" fallaba siempre con *object is unsendable*: el trabajo enviado al
+  isolate de cifrado arrastraba la pantalla. El cifrado y el descifrado ahora usan
+  funciones de nivel superior que solo reciben datos, con un test que las ejecuta en un
+  isolate real.
+- "Restaurar" ya no filtra por tipo de archivo (Drive y Samsung no siempre reportan un
+  `.json` como `application/json`). Si el archivo no es un respaldo, se avisa con un
+  mensaje claro.
+- El error de crear respaldo muestra un mensaje legible en vez del detalle técnico.
+
 ## [0.5.0] - 2026-11-19
 
 ### Añadido
@@ -178,7 +191,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/IAN63k/Finaid/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IAN63k/Finaid/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IAN63k/Finaid/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/IAN63k/Finaid/compare/v0.3.1...v0.3.2
