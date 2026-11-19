@@ -7,6 +7,30 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-19
+
+### Añadido
+
+- **Versión para iPhone** (primera fase):
+  - Captura con **Atajos**: automatizaciones de *Mensaje* (SMS del banco) y
+    *Transacción* (Apple Pay) que abren `finaid://ingest`; recetas paso a paso con
+    botón para copiar el enlace en Ajustes → *Captura con Atajos*. Perfil "Apple Pay"
+    para los pagos de Wallet.
+  - Plugin local `packages/finaid_ios` (Swift) con los mismos canales que Android:
+    Face ID / código para el bloqueo, selector de archivos para respaldo y CSV, avisos
+    locales para alertas de presupuesto y recordatorios de pagos, abrir Atajos.
+  - `LocalNotifier`: interfaz común de avisos (Android e iOS).
+  - Bienvenida y Ajustes adaptados a iPhone (sin las secciones exclusivas de Android).
+  - CI: compilación de iOS sin firma en macOS en cada push, y `.ipa` sin firma adjunta
+    a cada release (`tool/ios/configure.sh` configura `finaid://`, Face ID, nombre e
+    ícono).
+- `docs/IOS.md` reescrito: alcance real en iOS, recetas de Atajos e instalación
+  (Sideloadly/AltStore gratis o TestFlight con cuenta de desarrollador).
+
+### Corregido
+
+- Los enlaces `finaid://ingest` sin `ts` ya no fusionan dos compras idénticas seguidas.
+
 ## [0.10.0] - 2026-11-19
 
 ### Añadido
@@ -302,7 +326,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/IAN63k/Finaid/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/IAN63k/Finaid/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/IAN63k/Finaid/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/IAN63k/Finaid/compare/v0.7.2...v0.8.0

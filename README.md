@@ -9,8 +9,8 @@ las convierte en movimientos categorizados y te da recomendaciones sobre tu gast
 - Sin usuario ni contraseña bancaria. Solo lee el texto de la notificación.
 - Sin servidor. Todo se procesa y se guarda en tu teléfono (SQLite), con bloqueo opcional por
   huella, rostro o PIN y respaldos cifrados.
-- Android primero (lectura nativa de notificaciones); la arquitectura ya contempla iOS
-  vía Atajos. Ver [docs/IOS.md](docs/IOS.md).
+- Android: lectura nativa de notificaciones. iPhone: captura con Atajos (SMS del banco y
+  Apple Pay) y el resto de funciones iguales. Ver [docs/IOS.md](docs/IOS.md).
 
 ## Qué hace
 

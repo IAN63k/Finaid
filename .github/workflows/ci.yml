@@ -37,3 +37,29 @@ jobs:
           name: coverage
           path: coverage/lcov.info
           if-no-files-found: ignore
+
+  ios-build:
+    name: iOS build (sin firma)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # El proyecto iOS no se versiona: lo genera flutter create y se configura
+      # con tool/ios/configure.sh (esquema finaid://, Face ID, nombre, ícono).
+      - name: Generate and configure iOS project
+        run: |
+          flutter create . --project-name finaid --org co --platforms ios
+          bash tool/ios/configure.sh
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+

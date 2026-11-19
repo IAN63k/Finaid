@@ -79,3 +79,41 @@ jobs:
         with:
           files: build/app/outputs/flutter-apk/finaid-${{ github.ref_name }}.apk
           generate_release_notes: true
+
+  ios-ipa:
+    name: iOS IPA sin firma
+    needs: build-and-release
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate and configure iOS project
+        run: |
+          flutter create . --project-name finaid --org co --platforms ios
+          bash tool/ios/configure.sh
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      # IPA sin firmar: se instala firmándola con tu Apple ID (Sideloadly,
+      # AltStore) o se reemplaza por TestFlight con una cuenta de desarrollador.
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qr "finaid-${{ github.ref_name }}-ios-sin-firma.ipa" Payload
+
+      - name: Attach IPA to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: finaid-${{ github.ref_name }}-ios-sin-firma.ipa
+
