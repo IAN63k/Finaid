@@ -111,6 +111,7 @@ object NotificationChannels {
                         call.argument<String>("title") ?: "Finaid",
                         call.argument<String>("body") ?: "",
                         call.argument<String>("channel") == "budget",
+                        call.argument<Boolean>("private") == true,
                     )
                     result.success(null)
                 }

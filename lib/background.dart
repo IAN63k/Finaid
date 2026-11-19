@@ -56,7 +56,10 @@ Future<void> backgroundMain() async {
             );
             for (final a in alerts) {
               await source.showCaptureNotification(
-                  title: a.title, body: a.body, budget: a.isBudgetAlert);
+                  title: a.title,
+                  body: a.body,
+                  budget: a.isBudgetAlert,
+                  hideOnLockScreen: settings.lockEnabled);
             }
           } catch (e, st) {
             debugPrint('Finaid(bg): error ingiriendo: $e\n$st');

@@ -66,14 +66,32 @@ object CaptureNotifier {
         return b
     }
 
-    fun show(context: Context, title: String, body: String, budget: Boolean = false) {
+    /**
+     * @param hideOnLockScreen con el bloqueo de Finaid activo, en la pantalla de
+     *   bloqueo del teléfono solo se ve "Nuevo movimiento registrado", sin montos.
+     */
+    fun show(
+        context: Context,
+        title: String,
+        body: String,
+        budget: Boolean = false,
+        hideOnLockScreen: Boolean = false,
+    ) {
         if (!hasPermission(context)) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notification = builder(context, manager, if (budget) BUDGET_CHANNEL_ID else CHANNEL_ID)
+        val channel = if (budget) BUDGET_CHANNEL_ID else CHANNEL_ID
+        val b = builder(context, manager, channel)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(Notification.BigTextStyle().bigText(body))
-            .build()
+        if (hideOnLockScreen) {
+            val publicVersion = builder(context, manager, channel)
+                .setContentTitle("Finaid")
+                .setContentText(if (budget) "Alerta de presupuesto" else "Nuevo movimiento registrado")
+                .build()
+            b.setVisibility(Notification.VISIBILITY_PRIVATE).setPublicVersion(publicVersion)
+        }
+        val notification = b.build()
         val id = (System.currentTimeMillis() and 0x7fffffff).toInt()
         manager.notify(id, notification)
     }

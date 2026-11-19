@@ -130,7 +130,10 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
       } else if (android != null) {
         for (final a in alerts) {
           await android.showCaptureNotification(
-              title: a.title, body: a.body, budget: a.isBudgetAlert);
+              title: a.title,
+              body: a.body,
+              budget: a.isBudgetAlert,
+              hideOnLockScreen: settings.lockEnabled);
         }
       }
     },
@@ -222,6 +225,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   Future<void> setBudgetAlerts(bool enabled) =>
       _update(state.copyWith(budgetAlerts: enabled));
+
+  Future<void> setLockEnabled(bool enabled) =>
+      _update(state.copyWith(lockEnabled: enabled));
+
+  Future<void> setLockTimeout(int seconds) =>
+      _update(state.copyWith(lockTimeoutSeconds: seconds));
 
   Future<void> markBackupCreated(DateTime at) =>
       _update(state.copyWith(lastBackupAt: at));

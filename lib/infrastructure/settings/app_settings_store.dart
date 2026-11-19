@@ -9,6 +9,8 @@ class AppSettings {
     this.disabledPackages = const {},
     this.notifyCaptures = true,
     this.budgetAlerts = true,
+    this.lockEnabled = false,
+    this.lockTimeoutSeconds = 60,
     this.expectedMonthlyIncomeMinor,
     this.lastBackupAt,
   });
@@ -28,6 +30,12 @@ class AppSettings {
   /// Avisar al cruzar el 80% y el 100% del presupuesto de una categoría.
   final bool budgetAlerts;
 
+  /// Pedir huella, rostro o PIN al abrir Finaid.
+  final bool lockEnabled;
+
+  /// Segundos en segundo plano tras los que se vuelve a pedir (0 = siempre).
+  final int lockTimeoutSeconds;
+
   /// Ingreso mensual estimado (unidades menores). Se usa en los consejos cuando
   /// el banco no notifica los ingresos.
   final int? expectedMonthlyIncomeMinor;
@@ -41,6 +49,8 @@ class AppSettings {
     Set<String>? disabledPackages,
     bool? notifyCaptures,
     bool? budgetAlerts,
+    bool? lockEnabled,
+    int? lockTimeoutSeconds,
     int? expectedMonthlyIncomeMinor,
     bool clearExpectedIncome = false,
     DateTime? lastBackupAt,
@@ -51,6 +61,8 @@ class AppSettings {
         disabledPackages: disabledPackages ?? this.disabledPackages,
         notifyCaptures: notifyCaptures ?? this.notifyCaptures,
         budgetAlerts: budgetAlerts ?? this.budgetAlerts,
+        lockEnabled: lockEnabled ?? this.lockEnabled,
+        lockTimeoutSeconds: lockTimeoutSeconds ?? this.lockTimeoutSeconds,
         expectedMonthlyIncomeMinor: clearExpectedIncome
             ? null
             : expectedMonthlyIncomeMinor ?? this.expectedMonthlyIncomeMinor,
@@ -70,6 +82,8 @@ class AppSettingsStore {
   static const _knownDefaultsKey = 'known_default_packages';
   static const _notifyKey = 'notify_captures';
   static const _budgetAlertsKey = 'budget_alerts';
+  static const _lockKey = 'app_lock';
+  static const _lockTimeoutKey = 'app_lock_timeout';
   static const _incomeKey = 'expected_income_minor';
   static const _lastBackupKey = 'last_backup_at';
 
@@ -97,6 +111,8 @@ class AppSettingsStore {
       disabledPackages: disabled,
       notifyCaptures: _prefs.getBool(_notifyKey) ?? true,
       budgetAlerts: _prefs.getBool(_budgetAlertsKey) ?? true,
+      lockEnabled: _prefs.getBool(_lockKey) ?? false,
+      lockTimeoutSeconds: _prefs.getInt(_lockTimeoutKey) ?? 60,
       expectedMonthlyIncomeMinor: income == null || income <= 0 ? null : income,
       lastBackupAt: _date(_prefs.getInt(_lastBackupKey)),
     );
@@ -112,6 +128,8 @@ class AppSettingsStore {
         _knownDefaultsKey, KnownBanks.defaultPackages.toList()..sort());
     await _prefs.setBool(_notifyKey, settings.notifyCaptures);
     await _prefs.setBool(_budgetAlertsKey, settings.budgetAlerts);
+    await _prefs.setBool(_lockKey, settings.lockEnabled);
+    await _prefs.setInt(_lockTimeoutKey, settings.lockTimeoutSeconds);
     final backup = settings.lastBackupAt;
     if (backup != null) {
       await _prefs.setInt(_lastBackupKey, backup.millisecondsSinceEpoch);

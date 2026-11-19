@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../../core/external_launch.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/raw_notification.dart';
 import '../../domain/ports/notification_source.dart';
@@ -95,19 +96,27 @@ class AndroidNotificationSource implements NotificationSource {
   Future<bool> hasPermission() => _bool('isPermissionGranted');
 
   @override
-  Future<void> requestPermission() => _call('openSettings');
+  Future<void> requestPermission() {
+    ExternalLaunch.notify();
+    return _call('openSettings');
+  }
 
   Future<bool> isListenerConnected() => _bool('isListenerConnected');
 
   Future<bool> isBatteryUnrestricted() => _bool('isBatteryUnrestricted');
 
-  Future<void> openBatterySettings() => _call('openBatterySettings');
+  Future<void> openBatterySettings() {
+    ExternalLaunch.notify();
+    return _call('openBatterySettings');
+  }
 
   Future<bool> hasPostNotificationPermission() =>
       _bool('hasPostNotificationPermission');
 
-  Future<void> requestPostNotificationPermission() =>
-      _call('requestPostNotificationPermission');
+  Future<void> requestPostNotificationPermission() {
+    ExternalLaunch.notify();
+    return _call('requestPostNotificationPermission');
+  }
 
   /// Pide al sistema volver a enlazar el servicio (útil tras conceder permiso).
   Future<void> requestRebind() => _call('requestRebind');
@@ -135,11 +144,13 @@ class AndroidNotificationSource implements NotificationSource {
     required String title,
     required String body,
     bool budget = false,
+    bool hideOnLockScreen = false,
   }) =>
       _call('showCaptureNotification', {
         'title': title,
         'body': body,
         'channel': budget ? 'budget' : 'captures',
+        'private': hideOnLockScreen,
       });
 
   /// Publica la notificación de autoprueba. `false` si no hay permiso de avisos.
