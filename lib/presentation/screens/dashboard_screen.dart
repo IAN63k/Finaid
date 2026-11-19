@@ -5,6 +5,7 @@ import '../../application/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/money_format.dart';
 import '../../domain/analytics/month_summary.dart';
+import '../../domain/budgets/budget_check.dart';
 import '../../domain/entities/category.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/finaid_logo.dart';
@@ -83,7 +84,10 @@ class DashboardScreen extends ConsumerWidget {
             _SummaryCard(summary: summary),
             if (summary.byCategory.isNotEmpty) ...[
               const SectionTitle('Por categoría'),
-              _CategoryBreakdown(summary: summary),
+              _CategoryBreakdown(
+                summary: summary,
+                budgets: ref.watch(budgetsProvider).valueOrNull ?? const {},
+              ),
             ],
             if (insights.isNotEmpty) ...[
               SectionTitle(
@@ -241,9 +245,10 @@ class _Stat extends StatelessWidget {
 }
 
 class _CategoryBreakdown extends StatelessWidget {
-  const _CategoryBreakdown({required this.summary});
+  const _CategoryBreakdown({required this.summary, required this.budgets});
 
   final MonthSummary summary;
+  final Map<String, int> budgets;
 
   @override
   Widget build(BuildContext context) {
@@ -259,6 +264,7 @@ class _CategoryBreakdown extends StatelessWidget {
                 category: Categories.byId(e.key),
                 amountMinor: e.value,
                 share: summary.shareOf(e.key),
+                limitMinor: budgets[e.key],
               ),
               if (e != entries.last) const SizedBox(height: 12),
             ],
@@ -269,21 +275,41 @@ class _CategoryBreakdown extends StatelessWidget {
   }
 }
 
+/// Una categoría del mes. Si tiene presupuesto, la barra muestra el avance
+/// contra el límite (ámbar desde el 80%, rojo al superarlo); si no, su parte
+/// del gasto total.
 class _CategoryRow extends StatelessWidget {
   const _CategoryRow({
     required this.category,
     required this.amountMinor,
     required this.share,
+    this.limitMinor,
   });
 
   final Category category;
   final int amountMinor;
   final double share;
+  final int? limitMinor;
 
   @override
   Widget build(BuildContext context) {
-    final color = Color(category.color);
     final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final limit = limitMinor ?? 0;
+    final hasBudget = limit > 0;
+    final ratio = hasBudget ? amountMinor / limit : share;
+
+    final Color color;
+    if (!hasBudget) {
+      color = Color(category.color);
+    } else if (ratio >= 1) {
+      color = scheme.error;
+    } else if (ratio >= BudgetCheck.warningRatio) {
+      color = AppTheme.warning(context);
+    } else {
+      color = Color(category.color);
+    }
+
     return Row(
       children: [
         CategoryAvatar(category, radius: 16),
@@ -299,20 +325,18 @@ class _CategoryRow extends StatelessWidget {
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   MoneyText(amountMinor,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
+                      style: text.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(width: 8),
                   SizedBox(
-                    width: 38,
+                    width: 42,
                     child: Text(
-                      MoneyFormat.percent(share),
+                      MoneyFormat.percent(ratio),
                       textAlign: TextAlign.end,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: scheme.onSurfaceVariant),
+                      style: text.bodySmall?.copyWith(
+                        color: hasBudget ? color : scheme.onSurfaceVariant,
+                        fontWeight: hasBudget ? FontWeight.w700 : null,
+                      ),
                     ),
                   ),
                 ],
@@ -321,12 +345,25 @@ class _CategoryRow extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
-                  value: share.clamp(0.0, 1.0).toDouble(),
+                  value: ratio.clamp(0.0, 1.0).toDouble(),
                   minHeight: 6,
                   color: color,
                   backgroundColor: color.withAlpha(36),
                 ),
               ),
+              if (hasBudget)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    amountMinor > limit
+                        ? 'Presupuesto de ${MoneyFormat.format(limit)} superado por ${MoneyFormat.format(amountMinor - limit)}'
+                        : 'De ${MoneyFormat.format(limit)} · quedan ${MoneyFormat.format(limit - amountMinor)}',
+                    style: text.labelSmall?.copyWith(
+                        color: ratio >= BudgetCheck.warningRatio
+                            ? color
+                            : scheme.onSurfaceVariant),
+                  ),
+                ),
             ],
           ),
         ),
