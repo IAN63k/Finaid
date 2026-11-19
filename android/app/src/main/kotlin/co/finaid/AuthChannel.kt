@@ -106,9 +106,9 @@ class AuthChannel(private val activity: Activity) {
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
                         finish(
                             when (errorCode) {
+                                // (No hay botón negativo: se permite el PIN como alternativa.)
                                 BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED,
-                                BiometricPrompt.BIOMETRIC_ERROR_CANCELED,
-                                BiometricPrompt.BIOMETRIC_ERROR_NEGATIVE_BUTTON -> "cancelled"
+                                BiometricPrompt.BIOMETRIC_ERROR_CANCELED -> "cancelled"
                                 BiometricPrompt.BIOMETRIC_ERROR_LOCKOUT,
                                 BiometricPrompt.BIOMETRIC_ERROR_LOCKOUT_PERMANENT -> "lockout"
                                 else -> "error"
