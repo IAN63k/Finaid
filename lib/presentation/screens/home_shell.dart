@@ -9,6 +9,7 @@ import 'dashboard_screen.dart';
 import 'insights_screen.dart';
 import 'settings_screen.dart';
 import 'transactions_screen.dart';
+import 'trends_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -76,10 +77,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: [
           DashboardScreen(
             onSeeTransactions: () => _go(1),
-            onSeeInsights: () => _go(2),
-            onOpenSettings: () => _go(3),
+            onSeeInsights: () => _go(3),
+            onOpenSettings: () => _go(4),
           ),
           const TransactionsScreen(),
+          const TrendsScreen(),
           const InsightsScreen(),
           const SettingsScreen(),
         ],
@@ -101,6 +103,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             ),
             selectedIcon: const Icon(Icons.receipt_long),
             label: 'Movimientos',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart),
+            label: 'Tendencias',
           ),
           NavigationDestination(
             icon: Badge(
