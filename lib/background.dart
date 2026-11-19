@@ -66,6 +66,8 @@ Future<void> backgroundMain() async {
           }
         }
       } while (again);
+      // Un cobro nuevo puede mover la fecha de un pago recurrente.
+      await container.read(reminderSyncProvider).sync();
     } finally {
       busy = false;
     }

@@ -7,6 +7,7 @@ import '../../core/external_launch.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/raw_notification.dart';
 import '../../domain/ports/notification_source.dart';
+import '../../domain/recurring/reminder_planner.dart';
 
 /// App que ha emitido notificaciones en este teléfono (solo package y conteo).
 class SeenPackage {
@@ -151,6 +152,24 @@ class AndroidNotificationSource implements NotificationSource {
         'body': body,
         'channel': budget ? 'budget' : 'captures',
         'private': hideOnLockScreen,
+      });
+
+  /// Reemplaza los recordatorios de pagos programados (ver ReminderScheduler.kt).
+  Future<void> scheduleReminders(
+    List<PlannedReminder> reminders, {
+    bool hideOnLockScreen = false,
+  }) =>
+      _call('scheduleReminders', {
+        'items': [
+          for (final r in reminders)
+            {
+              'id': r.id,
+              'at': r.at.millisecondsSinceEpoch,
+              'title': r.title,
+              'body': r.body,
+              'private': hideOnLockScreen,
+            },
+        ],
       });
 
   /// Publica la notificación de autoprueba. `false` si no hay permiso de avisos.

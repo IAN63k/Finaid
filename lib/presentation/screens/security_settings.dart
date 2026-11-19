@@ -53,6 +53,8 @@ class SecuritySettingsCard extends ConsumerWidget {
       return;
     }
     await ref.read(settingsProvider.notifier).setLockEnabled(enable);
+    // Los recordatorios programados ocultan montos si hay bloqueo.
+    await ref.read(reminderSyncProvider).sync();
     messenger.showSnackBar(SnackBar(
         content: Text(enable
             ? (status.biometric

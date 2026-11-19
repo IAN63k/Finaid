@@ -18,6 +18,7 @@ import 'backup_screen.dart';
 import 'capture_tools.dart';
 import 'detected_apps_screen.dart';
 import 'merchant_rules_screen.dart';
+import 'recurring_screen.dart';
 import 'security_settings.dart';
 import 'simulate_notification_screen.dart';
 
@@ -150,6 +151,27 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: (v) =>
                       ref.read(settingsProvider.notifier).setBudgetAlerts(v),
                 ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.event_repeat),
+                  title: const Text('Recordatorios de pagos'),
+                  subtitle: const Text(
+                      'Aviso antes de suscripciones, servicios y pagos mensuales, aunque la app esté cerrada.'),
+                  value: settings.remindersEnabled,
+                  onChanged: (v) async {
+                    await ref.read(settingsProvider.notifier).setRemindersEnabled(v);
+                    await ref.read(reminderSyncProvider).sync();
+                  },
+                ),
+                if (settings.remindersEnabled)
+                  ListTile(
+                    leading: const Icon(Icons.schedule),
+                    title: const Text('Avisar con anticipación'),
+                    subtitle: Text(settings.reminderDaysBefore == 1
+                        ? '1 día antes, a las 9:00'
+                        : '${settings.reminderDaysBefore} días antes, a las 9:00'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _chooseReminderDays(context, ref, settings.reminderDaysBefore),
+                  ),
               ],
             ),
           ),
@@ -159,6 +181,16 @@ class SettingsScreen extends ConsumerWidget {
             elevation: 0,
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.event_repeat),
+                  title: const Text('Pagos recurrentes'),
+                  subtitle: const Text(
+                      'Suscripciones y servicios detectados, y pagos fijos que agregues a mano'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const RecurringScreen())),
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const CategoryAvatar(Categories.ingresos, radius: 16),
                   title: const Text('Ingreso mensual estimado'),
@@ -282,6 +314,34 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _chooseReminderDays(
+      BuildContext context, WidgetRef ref, int current) async {
+    final chosen = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Avisar antes de cada pago'),
+        children: [
+          for (final d in const [1, 2, 3])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, d),
+              child: Row(
+                children: [
+                  Icon(d == current
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked),
+                  const SizedBox(width: 12),
+                  Text(d == 1 ? '1 día antes' : '$d días antes'),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (chosen == null) return;
+    await ref.read(settingsProvider.notifier).setReminderDaysBefore(chosen);
+    await ref.read(reminderSyncProvider).sync();
   }
 
   Future<void> _addPackage(BuildContext context, WidgetRef ref) async {

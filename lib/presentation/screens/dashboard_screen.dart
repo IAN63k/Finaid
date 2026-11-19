@@ -10,6 +10,7 @@ import '../../domain/entities/category.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/finaid_logo.dart';
 import 'manual_transaction_sheet.dart';
+import 'recurring_screen.dart';
 import 'transaction_detail_sheet.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -28,6 +29,14 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(monthSummaryProvider);
     final insights = ref.watch(insightsProvider).take(3).toList();
+    final now = DateTime.now();
+    final upcoming = (ref.watch(recurringPaymentsProvider).valueOrNull ?? const [])
+        .where((p) {
+          final d = p.daysUntil(now);
+          return d >= -7 && d <= 15;
+        })
+        .take(3)
+        .toList();
     final permission = ref.watch(permissionStatusProvider);
     final month = ref.watch(selectedMonthProvider);
     final monthNotifier = ref.read(selectedMonthProvider.notifier);
@@ -87,6 +96,31 @@ class DashboardScreen extends ConsumerWidget {
               _CategoryBreakdown(
                 summary: summary,
                 budgets: ref.watch(budgetsProvider).valueOrNull ?? const {},
+              ),
+            ],
+            if (upcoming.isNotEmpty) ...[
+              SectionTitle(
+                'Próximos pagos',
+                trailing: TextButton(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const RecurringScreen())),
+                  child: const Text('Ver todos'),
+                ),
+              ),
+              Card(
+                elevation: 0,
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    for (final p in upcoming)
+                      RecurringTile(
+                        payment: p,
+                        now: now,
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => const RecurringScreen())),
+                      ),
+                  ],
+                ),
               ),
             ],
             if (insights.isNotEmpty) ...[

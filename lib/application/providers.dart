@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,8 +23,11 @@ import '../infrastructure/repositories/sqflite_repositories.dart';
 import '../infrastructure/settings/app_settings_store.dart';
 import '../infrastructure/backup/backup_codec.dart';
 import '../infrastructure/platform/document_storage.dart';
+import '../domain/recurring/recurring.dart';
+import '../domain/recurring/reminder_planner.dart';
 import 'backup_service.dart';
 import 'budget_alert_service.dart';
+import 'recurring_service.dart';
 import 'capture_notification_text.dart';
 import 'ingestion_service.dart';
 
@@ -110,9 +114,14 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
     onResumed: () {
       ref.invalidate(permissionStatusProvider);
       ref.invalidate(listenerStatusProvider);
+      ref.invalidate(recurringPaymentsProvider);
       ref.read(settingsProvider.notifier).autoEnableDetectedBanks();
+      ref.read(reminderSyncProvider).sync();
     },
     onNewTransaction: (transaction, inForeground) async {
+      // Un cobro nuevo puede mover la fecha de un pago recurrente.
+      ref.invalidate(recurringPaymentsProvider);
+      unawaited(ref.read(reminderSyncProvider).sync());
       final settings = ref.read(settingsProvider);
       final budget =
           await ref.read(budgetAlertServiceProvider).check(transaction);
@@ -231,6 +240,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   Future<void> setLockTimeout(int seconds) =>
       _update(state.copyWith(lockTimeoutSeconds: seconds));
+
+  Future<void> setRemindersEnabled(bool enabled) =>
+      _update(state.copyWith(remindersEnabled: enabled));
+
+  Future<void> setReminderDaysBefore(int days) =>
+      _update(state.copyWith(reminderDaysBefore: days));
 
   Future<void> markBackupCreated(DateTime at) =>
       _update(state.copyWith(lastBackupAt: at));
@@ -381,6 +396,7 @@ final backupServiceProvider = Provider<BackupService>(
     merchantRules: ref.watch(merchantRuleRepositoryProvider),
     budgets: ref.watch(budgetRepositoryProvider),
     rawNotifications: ref.watch(rawNotificationRepositoryProvider),
+    recurring: ref.watch(recurringRepositoryProvider),
   ),
 );
 
@@ -417,3 +433,55 @@ class ForegroundAlertNotifier extends Notifier<ForegroundAlert?> {
 final foregroundAlertProvider =
     NotifierProvider<ForegroundAlertNotifier, ForegroundAlert?>(
         ForegroundAlertNotifier.new);
+
+// ---------------------------------------------------------------------------
+// Pagos recurrentes y recordatorios
+// ---------------------------------------------------------------------------
+
+final recurringRepositoryProvider = Provider<RecurringRepository>(
+    (ref) => SqfliteRecurringRepository(ref.watch(databaseProvider)));
+
+final recurringServiceProvider = Provider<RecurringService>(
+  (ref) => RecurringService(
+    transactions: ref.watch(transactionRepositoryProvider),
+    recurring: ref.watch(recurringRepositoryProvider),
+  ),
+);
+
+/// Pagos recurrentes (detectados + manuales) ordenados por próxima fecha.
+final recurringPaymentsProvider =
+    FutureProvider<List<RecurringPayment>>((ref) async {
+  ref.watch(transactionsProvider);
+  return ref.read(recurringServiceProvider).list();
+});
+
+/// Recalcula y programa los recordatorios de pagos (AlarmManager).
+class ReminderSync {
+  ReminderSync(this._ref);
+
+  final Ref _ref;
+
+  Future<void> sync({DateTime? now}) async {
+    final android = _ref.read(androidSourceProvider);
+    if (android == null) return;
+    try {
+      final settings = _ref.read(settingsProvider);
+      if (!settings.remindersEnabled) {
+        await android.scheduleReminders(const []);
+        return;
+      }
+      final payments = await _ref.read(recurringServiceProvider).list(now: now);
+      final plan = ReminderPlanner.plan(
+        payments,
+        now: now ?? DateTime.now(),
+        daysBefore: settings.reminderDaysBefore,
+      );
+      await android.scheduleReminders(plan,
+          hideOnLockScreen: settings.lockEnabled);
+    } catch (_) {
+      // No crítico: se reintenta en la próxima sincronización.
+    }
+  }
+}
+
+final reminderSyncProvider = Provider<ReminderSync>((ref) => ReminderSync(ref));

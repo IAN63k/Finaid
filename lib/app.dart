@@ -50,6 +50,7 @@ class _FinaidAppState extends ConsumerState<FinaidApp> {
       await settings.completeLoadSync();
       await settings.autoEnableDetectedBanks();
       await ref.read(ingestionServiceProvider).start();
+      await ref.read(reminderSyncProvider).sync();
     });
   }
 

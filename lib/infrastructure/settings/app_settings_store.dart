@@ -11,6 +11,8 @@ class AppSettings {
     this.budgetAlerts = true,
     this.lockEnabled = false,
     this.lockTimeoutSeconds = 60,
+    this.remindersEnabled = true,
+    this.reminderDaysBefore = 2,
     this.expectedMonthlyIncomeMinor,
     this.lastBackupAt,
   });
@@ -36,6 +38,12 @@ class AppSettings {
   /// Segundos en segundo plano tras los que se vuelve a pedir (0 = siempre).
   final int lockTimeoutSeconds;
 
+  /// Avisar antes de los pagos recurrentes.
+  final bool remindersEnabled;
+
+  /// Con cuántos días de anticipación (1–3).
+  final int reminderDaysBefore;
+
   /// Ingreso mensual estimado (unidades menores). Se usa en los consejos cuando
   /// el banco no notifica los ingresos.
   final int? expectedMonthlyIncomeMinor;
@@ -51,6 +59,8 @@ class AppSettings {
     bool? budgetAlerts,
     bool? lockEnabled,
     int? lockTimeoutSeconds,
+    bool? remindersEnabled,
+    int? reminderDaysBefore,
     int? expectedMonthlyIncomeMinor,
     bool clearExpectedIncome = false,
     DateTime? lastBackupAt,
@@ -63,6 +73,8 @@ class AppSettings {
         budgetAlerts: budgetAlerts ?? this.budgetAlerts,
         lockEnabled: lockEnabled ?? this.lockEnabled,
         lockTimeoutSeconds: lockTimeoutSeconds ?? this.lockTimeoutSeconds,
+        remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+        reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
         expectedMonthlyIncomeMinor: clearExpectedIncome
             ? null
             : expectedMonthlyIncomeMinor ?? this.expectedMonthlyIncomeMinor,
@@ -84,6 +96,8 @@ class AppSettingsStore {
   static const _budgetAlertsKey = 'budget_alerts';
   static const _lockKey = 'app_lock';
   static const _lockTimeoutKey = 'app_lock_timeout';
+  static const _remindersKey = 'reminders_enabled';
+  static const _reminderDaysKey = 'reminder_days_before';
   static const _incomeKey = 'expected_income_minor';
   static const _lastBackupKey = 'last_backup_at';
 
@@ -113,6 +127,8 @@ class AppSettingsStore {
       budgetAlerts: _prefs.getBool(_budgetAlertsKey) ?? true,
       lockEnabled: _prefs.getBool(_lockKey) ?? false,
       lockTimeoutSeconds: _prefs.getInt(_lockTimeoutKey) ?? 60,
+      remindersEnabled: _prefs.getBool(_remindersKey) ?? true,
+      reminderDaysBefore: _prefs.getInt(_reminderDaysKey) ?? 2,
       expectedMonthlyIncomeMinor: income == null || income <= 0 ? null : income,
       lastBackupAt: _date(_prefs.getInt(_lastBackupKey)),
     );
@@ -130,6 +146,8 @@ class AppSettingsStore {
     await _prefs.setBool(_budgetAlertsKey, settings.budgetAlerts);
     await _prefs.setBool(_lockKey, settings.lockEnabled);
     await _prefs.setInt(_lockTimeoutKey, settings.lockTimeoutSeconds);
+    await _prefs.setBool(_remindersKey, settings.remindersEnabled);
+    await _prefs.setInt(_reminderDaysKey, settings.reminderDaysBefore);
     final backup = settings.lastBackupAt;
     if (backup != null) {
       await _prefs.setInt(_lastBackupKey, backup.millisecondsSinceEpoch);
