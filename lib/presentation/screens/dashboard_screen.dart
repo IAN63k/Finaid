@@ -7,6 +7,7 @@ import '../../core/utils/money_format.dart';
 import '../../domain/analytics/month_summary.dart';
 import '../../domain/entities/category.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/finaid_logo.dart';
 import 'manual_transaction_sheet.dart';
 import 'transaction_detail_sheet.dart';
 
@@ -33,8 +34,14 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finaid',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FinaidLogo(size: 30),
+            SizedBox(width: 10),
+            Text('Finaid', style: TextStyle(fontWeight: FontWeight.w800)),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Registrar a mano',
@@ -198,7 +205,7 @@ class _SummaryCard extends StatelessWidget {
                 Expanded(
                   child: _Stat(
                     label: 'Movimientos',
-                    value: '${summary.expenseCount}',
+                    value: '${summary.movementCount}',
                   ),
                 ),
               ],

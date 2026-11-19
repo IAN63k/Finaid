@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../widgets/finaid_logo.dart';
 
 class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
@@ -21,12 +22,7 @@ class OnboardingScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: scheme.primaryContainer,
-                child: Icon(Icons.account_balance_wallet_outlined,
-                    size: 34, color: scheme.onPrimaryContainer),
-              ),
+              const FinaidLogo(size: 72),
               const SizedBox(height: 24),
               Text('Tus gastos, solos.',
                   style: text.headlineMedium
