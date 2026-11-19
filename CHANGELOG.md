@@ -7,6 +7,31 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-19
+
+### Añadido
+
+- **Pagos recurrentes** (Ajustes → Ingresos y presupuestos → Pagos recurrentes, y
+  *Próximos pagos* en Inicio):
+  - Detección automática de cobros mensuales en el historial: mismo comercio, monto
+    parecido (±15% o $2.000) y unos 30 días entre cobros. Separa suscripciones distintas
+    del mismo comercio y descarta las que llevan más de 45 días sin cobrarse.
+  - Pagos manuales para lo que no llega por notificación (arriendo, administración,
+    cuotas), con día del mes y "Registrar el pago de este mes".
+  - "No es un pago recurrente" (con deshacer) y aviso activable por pago.
+- **Recordatorios**: 1, 2 (por defecto) o 3 días antes a las 9:00 y, en pagos manuales,
+  también el mismo día. Se programan con AlarmManager (sin permiso de alarmas exactas),
+  llegan con la app cerrada, se reprograman tras reiniciar el teléfono o actualizar la
+  app, y se recalculan cuando entra un cobro. Canal propio "Recordatorios de pagos";
+  ocultan montos en la pantalla de bloqueo si el bloqueo de Finaid está activo.
+- Los respaldos incluyen los pagos manuales y las preferencias (los respaldos anteriores
+  siguen abriendo).
+
+### Cambiado
+
+- Base de datos v2 (tablas `recurring_manual` y `recurring_overrides`), con migración
+  automática.
+
 ## [0.7.2] - 2026-11-19
 
 ### Corregido
@@ -248,7 +273,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/IAN63k/Finaid/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/IAN63k/Finaid/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/IAN63k/Finaid/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/IAN63k/Finaid/compare/v0.6.0...v0.7.0
