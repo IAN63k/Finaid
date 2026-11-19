@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -46,13 +45,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               appVersion: appVersionLabel,
               now: now,
             );
-        final password = choice.password;
-        // PBKDF2 es costoso: se hace fuera del hilo de la interfaz.
-        return Isolate.run(
-            () => BackupCodec().encode(payload, password: password));
+        return encodeBackupInBackground(payload, password: choice.password);
       });
-    } catch (e) {
-      _snack('No se pudo crear el respaldo: $e');
+    } catch (e, st) {
+      debugPrint('Finaid: error creando respaldo: $e\n$st');
+      _snack('No se pudo crear el respaldo. Inténtalo de nuevo y, si se repite, usa "Copiar diagnóstico".');
       return;
     }
 
@@ -75,7 +72,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<PickedDocument?> _pickBackupFile() async {
     try {
       return await ref.read(documentStorageProvider).open(
-        mimeTypes: const ['application/json', 'application/octet-stream', 'text/plain'],
+        // Sin filtro: Drive y Samsung no siempre reportan un .json como
+        // application/json. Si no es un respaldo, inspect() lo dice claramente.
+        mimeTypes: const [],
       );
     } on DocumentStorageException catch (e) {
       _snack(e.message);
@@ -94,12 +93,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         );
         if (password == null || !mounted) return null;
       }
-      final bytes = doc.bytes;
-      final pw = password;
       try {
         return await _withProgress(
           info.encrypted ? 'Descifrando…' : 'Leyendo respaldo…',
-          () => Isolate.run(() => BackupCodec().decode(bytes, password: pw)),
+          () => decodeBackupInBackground(doc.bytes, password: password),
         );
       } on BackupException catch (e) {
         _snack(_errorText(e.error));

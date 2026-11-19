@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -176,3 +177,29 @@ class BackupCodec {
 
   List<int> _bytes(int n) => List<int>.generate(n, (_) => _random.nextInt(256));
 }
+
+// -----------------------------------------------------------------------------
+// Ejecución en segundo plano
+// -----------------------------------------------------------------------------
+//
+// PBKDF2 tarda (a propósito), así que el cifrado corre en otro isolate. Estas
+// funciones son de nivel superior a propósito: un closure creado dentro de un
+// método de un widget o de un State captura `this` (y con él todo el árbol de
+// widgets), y Dart no puede enviarlo a otro isolate ("object is unsendable").
+// Aquí el closure solo captura los argumentos, que son datos simples.
+
+/// Cifra (o serializa, sin contraseña) el respaldo fuera del hilo de la interfaz.
+Future<Uint8List> encodeBackupInBackground(
+  BackupPayload payload, {
+  String? password,
+  int iterations = BackupCodec.defaultIterations,
+}) =>
+    Isolate.run(() =>
+        BackupCodec(iterations: iterations).encode(payload, password: password));
+
+/// Descifra el respaldo fuera del hilo de la interfaz. Propaga [BackupException].
+Future<BackupPayload> decodeBackupInBackground(
+  Uint8List bytes, {
+  String? password,
+}) =>
+    Isolate.run(() => BackupCodec().decode(bytes, password: password));

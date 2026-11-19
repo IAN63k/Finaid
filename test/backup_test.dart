@@ -134,6 +134,35 @@ void main() {
     });
   });
 
+  group('en segundo plano (isolate real)', () {
+    // Regresión v0.5.0: el closure enviado a Isolate.run capturaba la pantalla
+    // ("object is unsendable"). Estas funciones deben funcionar en un isolate.
+    test('cifra y descifra fuera del isolate principal', () async {
+      final bytes = await encodeBackupInBackground(_payload(),
+          password: 'clave-segura', iterations: 1000);
+      final back =
+          await decodeBackupInBackground(bytes, password: 'clave-segura');
+      expect(back.transactions.length, 2);
+      expect(back.settings.disabledPackages, ['com.whatsapp']);
+    });
+
+    test('sin contraseña también funciona', () async {
+      final bytes = await encodeBackupInBackground(_payload(), iterations: 1000);
+      final back = await decodeBackupInBackground(bytes);
+      expect(back.merchantRules.single.merchantKey, 'RAPPI');
+    });
+
+    test('la contraseña incorrecta llega como BackupException', () async {
+      final bytes = await encodeBackupInBackground(_payload(),
+          password: 'clave-segura', iterations: 1000);
+      await expectLater(
+        () => decodeBackupInBackground(bytes, password: 'otra'),
+        throwsA(isA<BackupException>()
+            .having((e) => e.error, 'error', BackupError.wrongPassword)),
+      );
+    });
+  });
+
   group('BackupService', () {
     late InMemoryTransactionRepository transactions;
     late InMemoryMerchantRuleRepository rules;
