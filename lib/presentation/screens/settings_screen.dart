@@ -12,6 +12,7 @@ import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/ios_shortcuts_card.dart';
 import '../widgets/phone_guide.dart';
 import '../widgets/money_input_formatter.dart';
 import 'capture_log_screen.dart';
@@ -46,20 +47,15 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
-          const SectionTitle('Captura de notificaciones'),
+          SectionTitle(android == null ? 'Captura con Atajos' : 'Captura de notificaciones'),
           if (android == null)
-            const Card(
-              elevation: 0,
-              child: ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('Esta plataforma usa el atajo de ingesta'),
-                subtitle: Text(
-                    'Consulta docs/IOS.md para configurar la automatización de Atajos.'),
-              ),
-            )
+            const IosShortcutsCard()
           else
             _ServiceStatusCard(android: android, status: status),
 
+          // Fuentes, apps detectadas y packages: solo Android (en iOS la
+          // captura llega por Atajos).
+          if (android != null) ...[
           const SectionTitle('Fuentes que escucha'),
           Card(
             elevation: 0,
@@ -75,7 +71,8 @@ class SettingsScreen extends ConsumerWidget {
                       builder: (_) => const DetectedAppsScreen())),
                 ),
                 const Divider(height: 1),
-                for (final bank in KnownBanks.all)
+                for (final bank in KnownBanks.all
+                    .where((b) => !b.packages.every((p) => p.startsWith('ios.'))))
                   SwitchListTile(
                     secondary: CircleAvatar(
                       backgroundColor: Color(bank.color).withAlpha(50),
@@ -128,6 +125,7 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          ],
 
           const SectionTitle('Avisos'),
           Card(

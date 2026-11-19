@@ -19,6 +19,7 @@ import '../domain/usecases/edit_transaction.dart';
 import '../domain/usecases/ingest_notification.dart';
 import '../infrastructure/platform/android_notification_source.dart';
 import '../infrastructure/platform/deeplink_notification_source.dart';
+import '../infrastructure/platform/local_notifier.dart';
 import '../infrastructure/repositories/sqflite_repositories.dart';
 import '../infrastructure/settings/app_settings_store.dart';
 import '../infrastructure/backup/backup_codec.dart';
@@ -93,6 +94,13 @@ final editUseCasesProvider = Provider<EditTransactionUseCases>(
 final androidSourceProvider = Provider<AndroidNotificationSource?>(
     (ref) => Platform.isAndroid ? AndroidNotificationSource() : null);
 
+/// Avisos locales y datos del equipo (Android e iOS). `null` en escritorio/tests.
+final localNotifierProvider = Provider<LocalNotifier?>((ref) {
+  if (Platform.isAndroid) return ref.watch(androidSourceProvider);
+  if (Platform.isIOS) return const IosPlatformBridge();
+  return null;
+});
+
 final deepLinkSourceProvider =
     Provider<DeepLinkNotificationSource>((ref) => DeepLinkNotificationSource());
 
@@ -105,7 +113,7 @@ final notificationSourcesProvider = Provider<List<NotificationSource>>((ref) {
 });
 
 final ingestionServiceProvider = Provider<IngestionService>((ref) {
-  final android = ref.watch(androidSourceProvider);
+  final notifier = ref.watch(localNotifierProvider);
   final service = IngestionService(
     sources: ref.watch(notificationSourcesProvider),
     ingest: ref.watch(ingestUseCaseProvider),
@@ -136,9 +144,9 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
         for (final a in alerts.where((a) => a.isBudgetAlert)) {
           ref.read(foregroundAlertProvider.notifier).show(a);
         }
-      } else if (android != null) {
+      } else if (notifier != null) {
         for (final a in alerts) {
-          await android.showCaptureNotification(
+          await notifier.showCaptureNotification(
               title: a.title,
               body: a.body,
               budget: a.isBudgetAlert,
@@ -167,9 +175,9 @@ final listenerStatusProvider = FutureProvider<ListenerStatus?>((ref) async {
 
 /// Fabricante, modelo y versión de Android (guía de batería, diagnóstico).
 final deviceInfoProvider = FutureProvider<DeviceInfo?>((ref) async {
-  final android = ref.watch(androidSourceProvider);
-  if (android == null) return null;
-  return android.deviceInfo();
+  final notifier = ref.watch(localNotifierProvider);
+  if (notifier == null) return null;
+  return notifier.deviceInfo();
 });
 
 /// Apps que han emitido notificaciones en este teléfono.
@@ -469,12 +477,12 @@ class ReminderSync {
   final Ref _ref;
 
   Future<void> sync({DateTime? now}) async {
-    final android = _ref.read(androidSourceProvider);
-    if (android == null) return;
+    final notifier = _ref.read(localNotifierProvider);
+    if (notifier == null) return;
     try {
       final settings = _ref.read(settingsProvider);
       if (!settings.remindersEnabled) {
-        await android.scheduleReminders(const []);
+        await notifier.scheduleReminders(const []);
         return;
       }
       final payments = await _ref.read(recurringServiceProvider).list(now: now);
@@ -483,7 +491,7 @@ class ReminderSync {
         now: now ?? DateTime.now(),
         daysBefore: settings.reminderDaysBefore,
       );
-      await android.scheduleReminders(plan,
+      await notifier.scheduleReminders(plan,
           hideOnLockScreen: settings.lockEnabled);
     } catch (_) {
       // No crítico: se reintenta en la próxima sincronización.

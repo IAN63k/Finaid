@@ -26,6 +26,7 @@ class DeepLinkNotificationSource implements NotificationSource {
       StreamController.broadcast();
   StreamSubscription<Uri>? _subscription;
   bool _initialConsumed = false;
+  static int _seq = 0;
 
   @override
   String get id => 'deeplink';
@@ -89,7 +90,9 @@ class DeepLinkNotificationSource implements NotificationSource {
       text: text,
       postedAt: postedAt,
       channel: channel,
-      dedupeKey: 'dl:${app}_${ts ?? ''}_${text.hashCode}',
+      // Sin `ts`, dos compras iguales seguidas no deben fusionarse: la clave
+      // usa el momento de llegada (la deduplicación por monto/comercio sigue).
+      dedupeKey: 'dl:${app}_${ts ?? '${DateTime.now().microsecondsSinceEpoch}-${_seq++}'}_${text.hashCode}',
     );
   }
 }

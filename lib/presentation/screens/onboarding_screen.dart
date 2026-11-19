@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -104,6 +106,22 @@ class OnboardingScreen extends ConsumerWidget {
                 Text(
                   'En Samsung y otros fabricantes, "Sin restricciones" evita que el sistema suspenda la escucha en segundo plano.',
                   style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+              ] else if (Platform.isIOS) ...[
+                // iPhone: la captura es con Atajos; aquí solo se piden los avisos.
+                Text(
+                  'En iPhone la captura se hace con Atajos: los SMS de tu banco y tus pagos con Apple Pay '
+                  'llegan a Finaid con una automatización. Te mostramos cómo en Ajustes → Captura con Atajos.',
+                  style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () => ref
+                      .read(localNotifierProvider)
+                      ?.requestPostNotificationPermission(),
+                  icon: const Icon(Icons.notifications_active_outlined),
+                  label: const Text('Permitir avisos de Finaid'),
                 ),
                 const SizedBox(height: 12),
               ],

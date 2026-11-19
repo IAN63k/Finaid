@@ -8,6 +8,7 @@ import '../../domain/entities/bank.dart';
 import '../../domain/entities/raw_notification.dart';
 import '../../domain/ports/notification_source.dart';
 import '../../domain/recurring/reminder_planner.dart';
+import 'local_notifier.dart';
 
 /// App que ha emitido notificaciones en este teléfono (solo package y conteo).
 class SeenPackage {
@@ -71,7 +72,7 @@ class ListenerStatus {
 /// * Las que llegaron con la app cerrada quedan en una tabla SQLite nativa y se
 ///   recogen con `drainPending` al abrir o volver a primer plano. Antes de drenar
 ///   se le pide al servicio que revise la bandeja, por si el sistema lo suspendió.
-class AndroidNotificationSource implements NotificationSource {
+class AndroidNotificationSource implements NotificationSource, LocalNotifier {
   AndroidNotificationSource({
     MethodChannel? methodChannel,
     EventChannel? eventChannel,
@@ -124,9 +125,11 @@ class AndroidNotificationSource implements NotificationSource {
     return _bool('openAutostartSettings');
   }
 
+  @override
   Future<bool> hasPostNotificationPermission() =>
       _bool('hasPostNotificationPermission');
 
+  @override
   Future<void> requestPostNotificationPermission() {
     ExternalLaunch.notify();
     return _call('requestPostNotificationPermission');
@@ -154,6 +157,7 @@ class AndroidNotificationSource implements NotificationSource {
     }
   }
 
+  @override
   Future<void> showCaptureNotification({
     required String title,
     required String body,
@@ -168,6 +172,7 @@ class AndroidNotificationSource implements NotificationSource {
       });
 
   /// Reemplaza los recordatorios de pagos programados (ver ReminderScheduler.kt).
+  @override
   Future<void> scheduleReminders(
     List<PlannedReminder> reminders, {
     bool hideOnLockScreen = false,
@@ -188,6 +193,7 @@ class AndroidNotificationSource implements NotificationSource {
   /// Publica la notificación de autoprueba. `false` si no hay permiso de avisos.
   Future<bool> postSelfTest() => _bool('postSelfTest');
 
+  @override
   Future<DeviceInfo?> deviceInfo() async {
     try {
       final m = await _methods.invokeMapMethod<String, dynamic>('deviceInfo');

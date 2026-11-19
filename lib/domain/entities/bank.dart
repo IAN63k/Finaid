@@ -100,6 +100,15 @@ class KnownBanks {
     color: 0xFFEC111A,
   );
 
+  /// Pagos con Apple Pay capturados por la automatización de Wallet en Atajos.
+  static const applePay = BankProfile(
+    id: 'applepay',
+    name: 'Apple Pay',
+    packages: ['ios.wallet'],
+    signatures: ['apple pay'],
+    color: 0xFF000000,
+  );
+
   /// Entidad que no reconocemos; el parser genérico igual intenta extraer la
   /// transacción.
   static const unknown = BankProfile(
@@ -121,6 +130,7 @@ class KnownBanks {
     lulo,
     rappipay,
     scotiabank,
+    applePay,
   ];
 
   /// Apps de mensajería: los bancos colombianos también avisan por SMS.
