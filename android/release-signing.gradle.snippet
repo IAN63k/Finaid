@@ -3,18 +3,21 @@
 // Este bloque lo añade el workflow de release (o tú, para firmar en local) al
 // final de android/app/build.gradle.kts, que genera `flutter create`. Usa
 // android/key.properties si existe; si no, queda la firma de debug.
+// Nota: no usar java.util.Properties aquí; en los scripts Kotlin de Gradle
+// `java` resuelve a la extensión del plugin y no al paquete.
 val finaidKeyProperties = rootProject.file("key.properties")
 if (finaidKeyProperties.exists()) {
-    val finaidProps = java.util.Properties().apply {
-        finaidKeyProperties.inputStream().use { load(it) }
-    }
+    val finaidProps: Map<String, String> = finaidKeyProperties.readLines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+        .associate { it.substringBefore("=").trim() to it.substringAfter("=").trim() }
     android {
         signingConfigs {
             create("finaidRelease") {
-                storeFile = file(finaidProps.getProperty("storeFile"))
-                storePassword = finaidProps.getProperty("storePassword")
-                keyAlias = finaidProps.getProperty("keyAlias")
-                keyPassword = finaidProps.getProperty("keyPassword")
+                storeFile = file(finaidProps.getValue("storeFile"))
+                storePassword = finaidProps.getValue("storePassword")
+                keyAlias = finaidProps.getValue("keyAlias")
+                keyPassword = finaidProps.getValue("keyPassword")
             }
         }
         buildTypes {
