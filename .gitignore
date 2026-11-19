@@ -42,3 +42,6 @@ android/settings.gradle.kts
 android/gradle.properties
 android/gradle/
 android/app/build.gradle.kts
+
+# Diagnósticos locales (tool/android_diag.ps1)
+diag/

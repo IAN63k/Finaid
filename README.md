@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/finaid-logo.svg" width="112" alt="Finaid"></p>
+
 # Finaid
 
 Finanzas personales **automáticas y privadas**: Finaid lee las notificaciones de compra
@@ -109,7 +111,8 @@ docs/              ARQUITECTURA.md, IOS.md, GIT_WORKFLOW.md
 Más detalle en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md). Flujo de ramas, commits y
 versiones en [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md). Guía paso a paso para instalar
 el APK o correr en modo desarrollo en tu celular:
-[docs/PRUEBA_EN_CELULAR.md](docs/PRUEBA_EN_CELULAR.md).
+[docs/PRUEBA_EN_CELULAR.md](docs/PRUEBA_EN_CELULAR.md). Entorno de desarrollo, ADB por Wi-Fi y firma
+estable: [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
 ## Añadir un banco o un formato nuevo
 

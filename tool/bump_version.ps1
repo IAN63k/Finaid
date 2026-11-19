@@ -38,9 +38,19 @@ $updated = $updated -replace "`r`n", "`n"
 [System.IO.File]::WriteAllText($Pubspec, $updated, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "pubspec.yaml: $old -> $newFull"
+
+# Versión visible dentro de la app (lib/core/app_info.dart), si existe.
+$appInfo = Join-Path (Split-Path -Parent (Resolve-Path -LiteralPath $Pubspec)) "lib/core/app_info.dart"
+if (Test-Path -LiteralPath $appInfo) {
+    $info = [System.IO.File]::ReadAllText($appInfo)
+    $info = [regex]::Replace($info, "'Finaid \d+\.\d+\.\d+'", "'Finaid $Version'")
+    [System.IO.File]::WriteAllText($appInfo, ($info -replace "`r`n", "`n"), [System.Text.UTF8Encoding]::new($false))
+    Write-Host "lib/core/app_info.dart: Finaid $Version"
+}
+
 Write-Host ""
 Write-Host "Next steps:"
-Write-Host "  git add pubspec.yaml CHANGELOG.md"
+Write-Host "  git add pubspec.yaml lib/core/app_info.dart CHANGELOG.md"
 Write-Host "  git commit -m `"chore(release): v$Version`""
 Write-Host "  git tag -a v$Version -m `"Finaid v$Version`""
 Write-Host "  git push --follow-tags"

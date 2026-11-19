@@ -178,7 +178,15 @@ captura funcione con Finaid cerrado:
 Aunque el servicio se desconecte un rato, al abrir Finaid se revisan las notificaciones
 que sigan en la bandeja, así que no se pierde lo que aún esté visible.
 
-### Segundo: Ajustes → Notificaciones recibidas
+### Segundo: Probar captura y Copiar diagnóstico
+
+En la misma tarjeta, **Probar captura** publica una notificación de prueba de Finaid y
+confirma que el servicio la recibe y la entiende, sin hacer un pago real. Si falla,
+Android no le está entregando notificaciones a Finaid. **Copiar diagnóstico** deja en el
+portapapeles un reporte completo para compartirlo. Más herramientas (ADB por Wi-Fi,
+scripts) en [DESARROLLO.md](DESARROLLO.md).
+
+### Tercero: Ajustes → Notificaciones recibidas
 
 Esta pantalla muestra todo lo que llegó a Finaid desde las apps activadas y qué se hizo
 con cada notificación:

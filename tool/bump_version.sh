@@ -28,9 +28,17 @@ awk -v nv="version: ${NEW_FULL}" '
 ' "$PUBSPEC" > "$TMP" && mv "$TMP" "$PUBSPEC"
 
 echo "pubspec.yaml: ${OLD} -> ${NEW_FULL}"
+
+# Versión visible dentro de la app (lib/core/app_info.dart), si existe.
+APP_INFO="$(dirname "$PUBSPEC")/lib/core/app_info.dart"
+if [ -f "$APP_INFO" ]; then
+  sed -i.bak -E "s/'Finaid [0-9]+\.[0-9]+\.[0-9]+'/'Finaid ${NEW}'/" "$APP_INFO" && rm -f "${APP_INFO}.bak"
+  echo "lib/core/app_info.dart: Finaid ${NEW}"
+fi
+
 echo
 echo "Next steps:"
-echo "  git add pubspec.yaml CHANGELOG.md"
+echo "  git add pubspec.yaml lib/core/app_info.dart CHANGELOG.md"
 echo "  git commit -m \"chore(release): v${NEW}\""
 echo "  git tag -a v${NEW} -m \"Finaid v${NEW}\""
 echo "  git push --follow-tags"

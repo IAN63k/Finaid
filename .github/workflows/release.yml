@@ -11,6 +11,8 @@ jobs:
   build-and-release:
     name: Build APK & publish release
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,7 +38,36 @@ jobs:
       - name: Test
         run: flutter test
 
-      # NOTE: release build currently uses the debug signing config (see android/app/build.gradle.kts).
+      # Firma estable si existen los secretos (tool/setup_signing.ps1). Si no, se usa una
+      # llave efímera: el APK sigue instalándose, pero no actualiza el anterior. En ambos
+      # casos se aplica el mismo bloque de firma, así queda probado en cada release.
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/finaid-release.jks
+            STORE_PASS="$KEYSTORE_PASSWORD"
+            ALIAS="${KEY_ALIAS:-finaid}"
+            echo "Usando la llave estable del repositorio."
+          else
+            STORE_PASS="$(openssl rand -hex 16)"
+            ALIAS="finaid"
+            keytool -genkeypair -noprompt -keystore android/app/finaid-release.jks \
+              -storetype PKCS12 -alias "$ALIAS" -keyalg RSA -keysize 2048 -validity 30 \
+              -storepass "$STORE_PASS" -keypass "$STORE_PASS" -dname "CN=Finaid CI, O=Finaid, C=CO"
+            echo "::warning::Sin secretos de firma: APK con llave efímera (no actualiza instalaciones previas). Ver tool/setup_signing.ps1"
+          fi
+          {
+            echo "storeFile=finaid-release.jks"
+            echo "storePassword=$STORE_PASS"
+            echo "keyAlias=$ALIAS"
+            echo "keyPassword=$STORE_PASS"
+          } > android/key.properties
+          cat android/release-signing.gradle.snippet >> android/app/build.gradle.kts
+
       - name: Build release APK
         run: flutter build apk --release
 

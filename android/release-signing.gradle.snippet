@@ -1,0 +1,26 @@
+
+// --- Firma de release de Finaid -------------------------------------------
+// Este bloque lo añade el workflow de release (o tú, para firmar en local) al
+// final de android/app/build.gradle.kts, que genera `flutter create`. Usa
+// android/key.properties si existe; si no, queda la firma de debug.
+val finaidKeyProperties = rootProject.file("key.properties")
+if (finaidKeyProperties.exists()) {
+    val finaidProps = java.util.Properties().apply {
+        finaidKeyProperties.inputStream().use { load(it) }
+    }
+    android {
+        signingConfigs {
+            create("finaidRelease") {
+                storeFile = file(finaidProps.getProperty("storeFile"))
+                storePassword = finaidProps.getProperty("storePassword")
+                keyAlias = finaidProps.getProperty("keyAlias")
+                keyPassword = finaidProps.getProperty("keyPassword")
+            }
+        }
+        buildTypes {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("finaidRelease")
+            }
+        }
+    }
+}
