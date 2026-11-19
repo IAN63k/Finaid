@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Diálogo para que el sistema no "duerma" el servicio de escucha (Samsung, Xiaomi...). -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Bloqueo de la app con huella, rostro o PIN (BiometricPrompt). Permiso normal: se concede al instalar. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!-- Para mostrar el nombre de las apps detectadas en Ajustes (Android 11+). -->
     <queries>

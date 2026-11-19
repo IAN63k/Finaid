@@ -80,7 +80,7 @@ function Get-BankNotifications {
     Get-BankNotifications
 
     Section "Logcat de Finaid (últimas $LogLines líneas)"
-    adb logcat -d -t $LogLines -s FinaidListener:V FinaidBackground:V flutter:V
+    adb logcat -d -t $LogLines -s FinaidListener:V FinaidBackground:V FinaidAuth:V flutter:V
 } *>&1 | Tee-Object -FilePath $file
 
 Write-Host ""

@@ -8,6 +8,7 @@ import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.CancellationSignal
+import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 
@@ -56,7 +57,8 @@ class AuthChannel(private val activity: Activity) {
                 @Suppress("DEPRECATION")
                 biometric = bm?.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "No se pudo consultar la biometría", e)
             biometric = false
         }
         return mapOf("available" to secure, "biometric" to biometric)
@@ -104,6 +106,7 @@ class AuthChannel(private val activity: Activity) {
                     }
 
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
+                        Log.i(TAG, "Autenticación terminada: código $errorCode ($errString)")
                         finish(
                             when (errorCode) {
                                 // (No hay botón negativo: se permite el PIN como alternativa.)
@@ -118,6 +121,7 @@ class AuthChannel(private val activity: Activity) {
                 },
             )
         } catch (e: Exception) {
+            Log.w(TAG, "BiometricPrompt falló", e)
             finish("error")
         }
     }
@@ -153,6 +157,7 @@ class AuthChannel(private val activity: Activity) {
 
     companion object {
         const val CHANNEL = "co.finaid/auth"
+        private const val TAG = "FinaidAuth"
         private const val REQUEST_CREDENTIAL = 7301
     }
 }
