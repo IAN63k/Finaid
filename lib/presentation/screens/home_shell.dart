@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
@@ -20,6 +21,36 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   void _go(int index) => setState(() => _index = index);
 
+  /// Atrás del teléfono: desde otra pestaña vuelve a Inicio; en Inicio pide
+  /// confirmación antes de cerrar la app. Las hojas y páginas abiertas encima
+  /// se cierran antes de llegar aquí, porque son rutas propias.
+  Future<void> _handleBack() async {
+    if (_index != 0) {
+      _go(0);
+      return;
+    }
+    final exit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.logout),
+        title: const Text('¿Salir de Finaid?'),
+        content: const Text(
+            'Tus movimientos se siguen registrando en segundo plano aunque cierres la app.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Salir'),
+          ),
+        ],
+      ),
+    );
+    if (exit == true) await SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final reviewCount = ref.watch(reviewCountProvider);
@@ -28,7 +59,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         .where((i) => i.severity == InsightSeverity.warning)
         .length;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
+      },
+      child: Scaffold(
       body: IndexedStack(
         index: _index,
         children: [
@@ -75,6 +111,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             label: 'Ajustes',
           ),
         ],
+      ),
       ),
     );
   }
