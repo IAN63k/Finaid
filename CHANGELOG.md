@@ -7,6 +7,23 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-19
+
+### Añadido
+
+- **Alertas de presupuesto**: cuando un gasto lleva su categoría al 80% o al 100% del
+  presupuesto mensual llega un aviso destacado ("⚠️ Vas en el 85% de tu presupuesto de
+  Restaurantes · te quedan $45.000 para 11 días"). Funciona con la app cerrada
+  (notificación en un canal propio, "Alertas de presupuesto"), con la app abierta (aviso
+  dentro de la app) y al registrar gastos a mano. No se repite mientras el presupuesto
+  siga en el mismo nivel.
+- El aviso de cada compra incluye cómo va el presupuesto de su categoría
+  ("📊 62% del presupuesto de Restaurantes · quedan $114.000").
+- Inicio → *Por categoría*: las categorías con presupuesto muestran el avance contra el
+  límite, en ámbar desde el 80% y en rojo al superarlo, con lo que queda.
+- Ajustes → Avisos → **Alertas de presupuesto** para activarlas o apagarlas (vienen
+  activas). Siguen llegando aunque se apaguen los avisos normales de cada movimiento.
+
 ## [0.5.1] - 2026-11-19
 
 ### Corregido
@@ -191,7 +208,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/IAN63k/Finaid/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/IAN63k/Finaid/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IAN63k/Finaid/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IAN63k/Finaid/compare/v0.3.2...v0.4.0
