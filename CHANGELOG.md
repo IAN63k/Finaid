@@ -7,6 +7,24 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-19
+
+### Añadido
+
+- **Bloqueo con huella, rostro o PIN**: Ajustes → Seguridad. Usa el bloqueo del propio
+  teléfono (BiometricPrompt del sistema en Android 10+, confirmación de credenciales en
+  versiones anteriores), sin dependencias externas. Activarlo y desactivarlo pide
+  confirmar la identidad.
+- La app arranca bloqueada y se vuelve a bloquear al regresar tras el tiempo elegido:
+  cada vez que se sale, tras 1 minuto (por defecto) o tras 5 minutos. Volver del
+  selector de archivos, de los ajustes de Android o de un permiso no la bloquea.
+- La pantalla de bloqueo cubre también las páginas abiertas; con la app bloqueada no se
+  muestran alertas dentro de la app y el botón atrás la manda al fondo.
+- Con el bloqueo activo, los avisos de Finaid ocultan montos y comercios en la pantalla de
+  bloqueo del teléfono ("Nuevo movimiento registrado").
+- Si el teléfono deja de tener bloqueo de pantalla, Finaid desactiva el suyo en lugar de
+  dejar al usuario por fuera de sus datos.
+
 ## [0.6.0] - 2026-11-19
 
 ### Añadido
@@ -208,7 +226,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/IAN63k/Finaid/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/IAN63k/Finaid/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/IAN63k/Finaid/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IAN63k/Finaid/compare/v0.4.0...v0.5.0
