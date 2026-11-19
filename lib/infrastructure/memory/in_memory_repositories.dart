@@ -2,6 +2,7 @@ import '../../domain/entities/merchant_rule.dart';
 import '../../domain/entities/raw_notification.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/ports/repositories.dart';
+import '../../domain/recurring/recurring.dart';
 
 /// Implementaciones en memoria: tests y modo demo.
 class InMemoryTransactionRepository implements TransactionRepository {
@@ -122,4 +123,26 @@ class InMemoryBudgetRepository implements BudgetRepository {
 
   @override
   Future<void> remove(String categoryId) async => _budgets.remove(categoryId);
+}
+
+class InMemoryRecurringRepository implements RecurringRepository {
+  final Map<String, ManualRecurring> _manual = {};
+  final Map<String, RecurringOverride> _overrides = {};
+
+  @override
+  Future<List<ManualRecurring>> manual() async => _manual.values.toList()
+    ..sort((a, b) => a.dayOfMonth.compareTo(b.dayOfMonth));
+
+  @override
+  Future<void> upsertManual(ManualRecurring item) async => _manual[item.id] = item;
+
+  @override
+  Future<void> deleteManual(String id) async => _manual.remove(id);
+
+  @override
+  Future<Map<String, RecurringOverride>> overrides() async => Map.of(_overrides);
+
+  @override
+  Future<void> setOverride(RecurringOverride override) async =>
+      _overrides[override.recurringId] = override;
 }

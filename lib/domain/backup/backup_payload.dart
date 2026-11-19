@@ -2,6 +2,7 @@ import '../entities/merchant_rule.dart';
 import '../entities/raw_notification.dart';
 import '../entities/transaction.dart';
 import '../ports/repositories.dart';
+import '../recurring/recurring.dart';
 
 /// Ajustes que viajan en el respaldo (sin depender de la capa de infraestructura).
 class BackupSettings {
@@ -43,6 +44,8 @@ class BackupPayload {
     required this.budgets,
     required this.notifications,
     required this.settings,
+    this.manualRecurring = const [],
+    this.recurringOverrides = const [],
   });
 
   /// Versión del formato de los datos. Subirla solo con cambios incompatibles
@@ -59,6 +62,12 @@ class BackupPayload {
   final List<RawNotificationRecord> notifications;
   final BackupSettings settings;
 
+  /// Pagos recurrentes agregados a mano (desde 0.8.0; vacío en respaldos viejos).
+  final List<ManualRecurring> manualRecurring;
+
+  /// Preferencias sobre pagos detectados (desde 0.8.0).
+  final List<RecurringOverride> recurringOverrides;
+
   Map<String, Object?> toJson() => {
         'schema': schemaVersion,
         'created_at': createdAt.toIso8601String(),
@@ -68,6 +77,15 @@ class BackupPayload {
         'budgets': budgets,
         'notifications': [for (final n in notifications) _rawToJson(n)],
         'settings': settings.toJson(),
+        'recurring_manual': [for (final m in manualRecurring) _manualToJson(m)],
+        'recurring_overrides': [
+          for (final o in recurringOverrides)
+            {
+              'recurring_id': o.recurringId,
+              'dismissed': o.dismissed,
+              'remind': o.remind,
+            },
+        ],
       };
 
   factory BackupPayload.fromJson(Map<String, Object?> j) {
@@ -93,8 +111,44 @@ class BackupPayload {
       ],
       settings: BackupSettings.fromJson(
           Map<String, Object?>.from((j['settings'] as Map?) ?? const {})),
+      manualRecurring: [
+        for (final m in _maps(j['recurring_manual'])) _manualFromJson(m),
+      ],
+      recurringOverrides: [
+        for (final o in _maps(j['recurring_overrides']))
+          RecurringOverride(
+            recurringId: o['recurring_id'] as String,
+            dismissed: o['dismissed'] as bool? ?? false,
+            remind: o['remind'] as bool? ?? true,
+          ),
+      ],
     );
   }
+
+  static Map<String, Object?> _manualToJson(ManualRecurring m) => {
+        'id': m.id,
+        'name': m.name,
+        'amount_minor': m.amountMinor,
+        'category_id': m.categoryId,
+        'day_of_month': m.dayOfMonth,
+        'remind': m.remind,
+        'last_paid_month': m.lastPaidMonth?.toIso8601String(),
+        'created_at': m.createdAt.toIso8601String(),
+      };
+
+  static ManualRecurring _manualFromJson(Map<String, Object?> j) =>
+      ManualRecurring(
+        id: j['id'] as String,
+        name: j['name'] as String? ?? '',
+        amountMinor: (j['amount_minor'] as num).toInt(),
+        categoryId: j['category_id'] as String? ?? 'otros',
+        dayOfMonth: (j['day_of_month'] as num?)?.toInt() ?? 1,
+        remind: j['remind'] as bool? ?? true,
+        lastPaidMonth: j['last_paid_month'] == null
+            ? null
+            : DateTime.parse(j['last_paid_month'] as String),
+        createdAt: DateTime.parse(j['created_at'] as String),
+      );
 
   static Map<String, Object?> _txToJson(Transaction t) => {
         'id': t.id,

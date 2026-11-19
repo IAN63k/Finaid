@@ -30,12 +30,14 @@ class BackupService {
     required this.merchantRules,
     required this.budgets,
     required this.rawNotifications,
+    this.recurring,
   });
 
   final TransactionRepository transactions;
   final MerchantRuleRepository merchantRules;
   final BudgetRepository budgets;
   final RawNotificationRepository rawNotifications;
+  final RecurringRepository? recurring;
 
   /// Límite de notificaciones crudas incluidas (las más recientes).
   static const int maxNotifications = 5000;
@@ -52,6 +54,9 @@ class BackupService {
       merchantRules: await merchantRules.all(),
       budgets: await budgets.all(),
       notifications: await rawNotifications.recent(limit: maxNotifications),
+      manualRecurring: await recurring?.manual() ?? const [],
+      recurringOverrides:
+          (await recurring?.overrides())?.values.toList() ?? const [],
       settings: BackupSettings(
         notifyCaptures: settings.notifyCaptures,
         expectedMonthlyIncomeMinor: settings.expectedMonthlyIncomeMinor,
@@ -85,6 +90,17 @@ class BackupService {
       await rawNotifications.save(record.notification);
       await rawNotifications.markProcessed(record.notification.id,
           status: record.status, reason: record.reason);
+    }
+
+    final rec = recurring;
+    if (rec != null) {
+      for (final m in payload.manualRecurring) {
+        await rec.upsertManual(m);
+      }
+      final existing = await rec.overrides();
+      for (final o in payload.recurringOverrides) {
+        if (!existing.containsKey(o.recurringId)) await rec.setOverride(o);
+      }
     }
 
     final s = payload.settings;

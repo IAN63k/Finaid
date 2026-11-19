@@ -1,4 +1,5 @@
 import '../entities/merchant_rule.dart';
+import '../recurring/recurring.dart';
 import '../entities/raw_notification.dart';
 import '../entities/transaction.dart';
 
@@ -65,4 +66,14 @@ abstract class BudgetRepository {
   Future<Map<String, int>> all();
   Future<void> set(String categoryId, int monthlyLimitMinor);
   Future<void> remove(String categoryId);
+}
+
+/// Pagos recurrentes agregados a mano y preferencias sobre los detectados.
+abstract class RecurringRepository {
+  Future<List<ManualRecurring>> manual();
+  Future<void> upsertManual(ManualRecurring item);
+  Future<void> deleteManual(String id);
+
+  Future<Map<String, RecurringOverride>> overrides();
+  Future<void> setOverride(RecurringOverride override);
 }

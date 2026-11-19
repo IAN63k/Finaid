@@ -4,6 +4,7 @@ import '../../domain/entities/merchant_rule.dart';
 import '../../domain/entities/raw_notification.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/ports/repositories.dart';
+import '../../domain/recurring/recurring.dart';
 
 class SqfliteTransactionRepository implements TransactionRepository {
   SqfliteTransactionRepository(this._db);
@@ -260,4 +261,74 @@ class SqfliteBudgetRepository implements BudgetRepository {
   @override
   Future<void> remove(String categoryId) =>
       _db.delete(_table, where: 'category_id = ?', whereArgs: [categoryId]);
+}
+
+class SqfliteRecurringRepository implements RecurringRepository {
+  SqfliteRecurringRepository(this._db);
+
+  final Database _db;
+
+  @override
+  Future<List<ManualRecurring>> manual() async {
+    final rows = await _db.query('recurring_manual', orderBy: 'day_of_month ASC');
+    return [
+      for (final r in rows)
+        ManualRecurring(
+          id: r['id'] as String,
+          name: r['name'] as String,
+          amountMinor: r['amount_minor'] as int,
+          categoryId: r['category_id'] as String,
+          dayOfMonth: r['day_of_month'] as int,
+          remind: (r['remind'] as int) == 1,
+          lastPaidMonth: r['last_paid_month'] == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(r['last_paid_month'] as int),
+          createdAt: DateTime.fromMillisecondsSinceEpoch(r['created_at'] as int),
+        ),
+    ];
+  }
+
+  @override
+  Future<void> upsertManual(ManualRecurring item) => _db.insert(
+        'recurring_manual',
+        {
+          'id': item.id,
+          'name': item.name,
+          'amount_minor': item.amountMinor,
+          'category_id': item.categoryId,
+          'day_of_month': item.dayOfMonth,
+          'remind': item.remind ? 1 : 0,
+          'last_paid_month': item.lastPaidMonth?.millisecondsSinceEpoch,
+          'created_at': item.createdAt.millisecondsSinceEpoch,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+  @override
+  Future<void> deleteManual(String id) =>
+      _db.delete('recurring_manual', where: 'id = ?', whereArgs: [id]);
+
+  @override
+  Future<Map<String, RecurringOverride>> overrides() async {
+    final rows = await _db.query('recurring_overrides');
+    return {
+      for (final r in rows)
+        r['recurring_id'] as String: RecurringOverride(
+          recurringId: r['recurring_id'] as String,
+          dismissed: (r['dismissed'] as int) == 1,
+          remind: (r['remind'] as int) == 1,
+        ),
+    };
+  }
+
+  @override
+  Future<void> setOverride(RecurringOverride o) => _db.insert(
+        'recurring_overrides',
+        {
+          'recurring_id': o.recurringId,
+          'dismissed': o.dismissed ? 1 : 0,
+          'remind': o.remind ? 1 : 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
 }
