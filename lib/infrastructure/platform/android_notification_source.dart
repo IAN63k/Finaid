@@ -111,6 +111,19 @@ class AndroidNotificationSource implements NotificationSource {
     return _call('openBatterySettings');
   }
 
+  /// Ficha de la app en Ajustes ("Permitir ajustes restringidos", batería…).
+  Future<void> openAppDetails() {
+    ExternalLaunch.notify();
+    return _call('openAppDetails');
+  }
+
+  /// Pantalla de "Inicio automático" del fabricante. `false` si no existe y se
+  /// abrió la ficha de la app en su lugar.
+  Future<bool> openAutostartSettings() {
+    ExternalLaunch.notify();
+    return _bool('openAutostartSettings');
+  }
+
   Future<bool> hasPostNotificationPermission() =>
       _bool('hasPostNotificationPermission');
 

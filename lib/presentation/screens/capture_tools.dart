@@ -79,7 +79,7 @@ Future<void> runCaptureSelfTest(BuildContext context, WidgetRef ref) async {
           : result == null
               ? 'Android no entregó la notificación al servicio de escucha. '
                   'Desactiva y vuelve a activar Finaid en Acceso a notificaciones, '
-                  'revisa los ajustes de batería de Samsung y repite la prueba.'
+                  'sigue la guía "Configura tu teléfono" de Ajustes y repite la prueba.'
               : 'Motivo: ${ignoreReasonLabel(outcome?.ignoreReason)}'),
       actions: [
         if (!ok)

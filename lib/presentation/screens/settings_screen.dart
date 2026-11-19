@@ -12,6 +12,7 @@ import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/phone_guide.dart';
 import '../widgets/money_input_formatter.dart';
 import 'capture_log_screen.dart';
 import 'backup_screen.dart';
@@ -592,27 +593,7 @@ class _ServiceStatusCard extends ConsumerWidget {
               ],
             ),
           ),
-          ExpansionTile(
-            leading: const Icon(Icons.phone_android),
-            title: const Text('Si tienes Samsung (One UI)'),
-            subtitle: const Text(
-                'One UI suspende las apps que no usas y desconecta el servicio'),
-            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            children: [
-              Text(
-                '1. Ajustes → Batería → Límites de uso en segundo plano → '
-                '"Apps que nunca se suspenden" → agrega Finaid.\n'
-                '2. En la misma pantalla desactiva "Suspender apps que no usas" (o quita a Finaid de las listas de suspensión).\n'
-                '3. Ajustes → Aplicaciones → Finaid → Batería → "Sin restricciones".\n'
-                '4. Ajustes → Aplicaciones → Finaid → Notificaciones → permitir.\n\n'
-                'Aunque el servicio se desconecte un rato, al abrir Finaid se revisan las notificaciones que sigan en la bandeja.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant, height: 1.45),
-              ),
-            ],
-          ),
+          PhoneGuideTile(android: android),
           if (Platform.isAndroid)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),

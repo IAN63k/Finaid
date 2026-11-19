@@ -199,6 +199,34 @@ con cada notificación:
 - Si una notificación bancaria **no aparece aquí**, el problema es la captura: revisa
   el servicio, la batería y "Apps detectadas".
 
+### Otros fabricantes
+
+Ajustes → *Captura de notificaciones* → **Configura tu …** muestra los pasos según la marca
+del teléfono, con botones para abrir *Inicio automático* (si la marca lo tiene), *Batería*
+e *Información de la app*. En resumen:
+
+| Marca | Qué hacer |
+| --- | --- |
+| Xiaomi, Redmi, POCO | Aplicaciones → Finaid → **Inicio automático** activado y Ahorro de batería **Sin restricciones**; bloquear Finaid en recientes. |
+| Huawei, Honor | Batería → Inicio de aplicaciones → Finaid → **Gestionar manualmente** con inicio automático, secundario y en segundo plano. |
+| OPPO, realme, OnePlus | Aplicaciones → Finaid → Uso de batería → **Permitir actividad en segundo plano** e **inicio automático**. |
+| vivo, iQOO | Batería → consumo en segundo plano → permitir Finaid; Permisos → **Inicio automático**. |
+| Motorola, Pixel | Aplicaciones → Finaid → Batería → **Sin restricciones**. |
+
+Si no encuentras un menú, usa la búsqueda de Ajustes: "inicio automático", "batería" o
+"segundo plano".
+
+### "Ajuste restringido" (Android 13 o superior)
+
+Cuando Finaid se instala desde un archivo APK, Android puede mostrar el interruptor de
+*Acceso a notificaciones* en gris con el mensaje "Ajuste restringido". Para habilitarlo:
+
+1. Ajustes → Aplicaciones → Finaid (o el botón *Información de la app* en Finaid).
+2. Menú **⋮** de arriba a la derecha → **Permitir ajustes restringidos** y confirma.
+3. Vuelve a *Acceso a notificaciones* y activa Finaid.
+
+La pantalla de bienvenida muestra esta ayuda con el enlace "¿El interruptor sale gris?".
+
 ### Si tu banco no está en la lista o cambió de package
 
 Ajustes → Fuentes → **Apps detectadas en este teléfono**: ahí aparecen todas las apps

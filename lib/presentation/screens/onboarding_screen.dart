@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../widgets/finaid_logo.dart';
+import '../widgets/phone_guide.dart';
 
 class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
@@ -69,6 +70,15 @@ class OnboardingScreen extends ConsumerWidget {
                   'Android abrirá la lista de apps con acceso a notificaciones. Activa "Finaid" y vuelve.',
                   style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
+                if (!granted && (ref.watch(deviceInfoProvider).valueOrNull?.sdk ?? 0) >= 33)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => showRestrictedSettingsHelp(context, android),
+                      icon: const Icon(Icons.help_outline, size: 18),
+                      label: const Text('¿El interruptor sale gris? Ver cómo habilitarlo'),
+                    ),
+                  ),
                 const SizedBox(height: 8),
                 Row(
                   children: [

@@ -165,6 +165,13 @@ final listenerStatusProvider = FutureProvider<ListenerStatus?>((ref) async {
   return android.status();
 });
 
+/// Fabricante, modelo y versión de Android (guía de batería, diagnóstico).
+final deviceInfoProvider = FutureProvider<DeviceInfo?>((ref) async {
+  final android = ref.watch(androidSourceProvider);
+  if (android == null) return null;
+  return android.deviceInfo();
+});
+
 /// Apps que han emitido notificaciones en este teléfono.
 final seenPackagesProvider =
     FutureProvider.autoDispose<List<SeenPackage>>((ref) async {
