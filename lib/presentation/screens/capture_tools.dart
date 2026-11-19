@@ -72,7 +72,7 @@ Future<void> runCaptureSelfTest(BuildContext context, WidgetRef ref) async {
               : 'Llegó, pero no se entendió'),
       content: Text(ok
           ? 'El servicio recibió la notificación y el parser leyó '
-              '${MoneyFormat.format(outcome!.transaction!.amountMinor)} en '
+              '${MoneyFormat.format(outcome.transaction!.amountMinor)} en '
               '${outcome.transaction!.merchantRaw}. Si un banco no se registra, '
               'revisa que esté activado en "Apps detectadas" y mira '
               '"Notificaciones recibidas".'
