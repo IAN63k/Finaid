@@ -7,6 +7,21 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-19
+
+### Añadido
+
+- Separador de miles automático en los campos de dinero (registro manual, presupuestos e
+  ingreso mensual): `1500000` se ve como `1.500.000` mientras se escribe. El cursor no
+  salta y borrar un punto borra el dígito anterior.
+- Botón atrás del teléfono: desde Movimientos, Consejos o Ajustes vuelve a Inicio; en
+  Inicio pregunta "¿Salir de Finaid?" antes de cerrar.
+
+### Cambiado
+
+- Scripts de ADB: eligen un solo dispositivo cuando el celular aparece dos veces por
+  Wi-Fi (`tool/adb_common.ps1`).
+
 ## [0.3.2] - 2026-11-19
 
 ### Cambiado
@@ -145,7 +160,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/IAN63k/Finaid/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/IAN63k/Finaid/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/IAN63k/Finaid/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/IAN63k/Finaid/compare/v0.2.1...v0.3.0
