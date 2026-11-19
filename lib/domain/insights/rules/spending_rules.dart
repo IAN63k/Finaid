@@ -511,3 +511,32 @@ class GettingStartedRule extends InsightRule {
     ];
   }
 }
+
+/// Recordatorio de respaldo: los datos solo viven en el teléfono.
+class BackupReminderRule extends InsightRule {
+  const BackupReminderRule();
+
+  static const int minTransactions = 15;
+  static const Duration maxAge = Duration(days: 30);
+
+  @override
+  List<Insight> evaluate(InsightContext ctx) {
+    if (ctx.all.length < minTransactions) return const [];
+    final last = ctx.lastBackupAt;
+    if (last != null && ctx.now.difference(last) < maxAge) return const [];
+    final days = last == null ? null : ctx.now.difference(last).inDays;
+    return [
+      Insight(
+        id: 'backup',
+        kind: InsightKind.backup,
+        severity: InsightSeverity.info,
+        title: last == null
+            ? 'Aún no tienes un respaldo'
+            : 'Tu último respaldo fue hace $days días',
+        body:
+            'Tus ${ctx.all.length} movimientos solo están en este teléfono. Crea un respaldo en Ajustes → Respaldo y exportación y guárdalo en Drive o en tu computador.',
+        score: last == null ? 25 : 15,
+      ),
+    ];
+  }
+}

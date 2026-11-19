@@ -86,6 +86,28 @@ void main() {
     expect(savings.body, contains('Ingreso estimado'));
   });
 
+  test('recuerda hacer un respaldo con suficientes movimientos', () {
+    final many = [
+      for (var i = 0; i < 20; i++)
+        tx(cop: 1000, at: DateTime(2026, 11, 1 + (i % 10), 10), merchant: 'M$i'),
+    ];
+    final never = engine.generate(transactions: many, now: now);
+    final reminder = never.firstWhere((i) => i.kind == InsightKind.backup);
+    expect(reminder.title, 'Aún no tienes un respaldo');
+
+    final old = engine.generate(
+        transactions: many, lastBackupAt: DateTime(2026, 9, 1), now: now);
+    expect(old.firstWhere((i) => i.kind == InsightKind.backup).title,
+        contains('días'));
+
+    final recent = engine.generate(
+        transactions: many, lastBackupAt: DateTime(2026, 11, 10), now: now);
+    expect(recent.where((i) => i.kind == InsightKind.backup), isEmpty);
+
+    final few = engine.generate(transactions: many.take(5).toList(), now: now);
+    expect(few.where((i) => i.kind == InsightKind.backup), isEmpty);
+  });
+
   test('MonthSummary excluye ignorados y agrupa por categoría', () {
     final summary = MonthSummary.from(transactions, DateTime(2026, 11));
     expect(summary.expensesMinor, (35900 + 350000 + 25000 + 25000) * 100);

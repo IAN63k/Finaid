@@ -20,6 +20,9 @@ import '../infrastructure/platform/android_notification_source.dart';
 import '../infrastructure/platform/deeplink_notification_source.dart';
 import '../infrastructure/repositories/sqflite_repositories.dart';
 import '../infrastructure/settings/app_settings_store.dart';
+import '../infrastructure/backup/backup_codec.dart';
+import '../infrastructure/platform/document_storage.dart';
+import 'backup_service.dart';
 import 'capture_notification_text.dart';
 import 'ingestion_service.dart';
 
@@ -202,6 +205,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> setNotifyCaptures(bool enabled) =>
       _update(state.copyWith(notifyCaptures: enabled));
 
+  Future<void> markBackupCreated(DateTime at) =>
+      _update(state.copyWith(lastBackupAt: at));
+
+  /// Aplica los ajustes resultantes de restaurar un respaldo.
+  Future<void> applyRestored(AppSettings merged) => _update(merged);
+
   Future<void> setExpectedIncome(int? minor) => _update(
         minor == null || minor <= 0
             ? state.copyWith(clearExpectedIncome: true)
@@ -323,8 +332,27 @@ final insightsProvider = Provider<List<Insight>>((ref) {
         transactions: transactions,
         budgets: budgets,
         expectedIncomeMinor: settings.expectedMonthlyIncomeMinor,
+        lastBackupAt: settings.lastBackupAt,
       );
 });
 
 final reviewCountProvider = Provider<int>((ref) =>
     ref.watch(allTransactionsProvider).where((t) => t.needsReview).length);
+
+// ---------------------------------------------------------------------------
+// Respaldo y exportación
+// ---------------------------------------------------------------------------
+
+final backupCodecProvider = Provider<BackupCodec>((ref) => BackupCodec());
+
+final documentStorageProvider =
+    Provider<DocumentStorage>((ref) => const DocumentStorage());
+
+final backupServiceProvider = Provider<BackupService>(
+  (ref) => BackupService(
+    transactions: ref.watch(transactionRepositoryProvider),
+    merchantRules: ref.watch(merchantRuleRepositoryProvider),
+    budgets: ref.watch(budgetRepositoryProvider),
+    rawNotifications: ref.watch(rawNotificationRepositoryProvider),
+  ),
+);

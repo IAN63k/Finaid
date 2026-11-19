@@ -14,6 +14,7 @@ enum InsightKind {
   savings,
   nightSpending,
   gettingStarted,
+  backup,
 }
 
 /// Recomendación o hallazgo generado localmente a partir de los movimientos.

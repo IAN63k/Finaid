@@ -23,6 +23,7 @@ class InsightEngine {
         TopMerchantRule(),
         WeekendRule(),
         NightSpendingRule(),
+        BackupReminderRule(),
       ]);
 
   final List<InsightRule> rules;
@@ -31,6 +32,7 @@ class InsightEngine {
     required List<Transaction> transactions,
     Map<String, int> budgets = const {},
     int? expectedIncomeMinor,
+    DateTime? lastBackupAt,
     DateTime? now,
   }) {
     final ctx = InsightContext(
@@ -38,6 +40,7 @@ class InsightEngine {
       transactions: transactions,
       budgets: budgets,
       expectedIncomeMinor: expectedIncomeMinor,
+      lastBackupAt: lastBackupAt,
     );
     final out = <Insight>[];
     for (final rule in rules) {

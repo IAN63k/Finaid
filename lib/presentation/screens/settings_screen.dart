@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/app_info.dart';
+import '../../core/utils/date_utils.dart';
 import '../../core/utils/money_format.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
@@ -13,6 +14,7 @@ import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/money_input_formatter.dart';
 import 'capture_log_screen.dart';
+import 'backup_screen.dart';
 import 'capture_tools.dart';
 import 'detected_apps_screen.dart';
 import 'merchant_rules_screen.dart';
@@ -181,6 +183,21 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => _editBudget(context, ref, c, budgets[c.id]),
                   ),
               ],
+            ),
+          ),
+
+          const SectionTitle('Tus datos'),
+          Card(
+            elevation: 0,
+            child: ListTile(
+              leading: const Icon(Icons.backup_outlined),
+              title: const Text('Respaldo y exportación'),
+              subtitle: Text(settings.lastBackupAt == null
+                  ? 'Aún no tienes respaldo · Exportar a Excel'
+                  : 'Último respaldo: ${Dates.shortDate(settings.lastBackupAt!)}'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BackupScreen())),
             ),
           ),
 

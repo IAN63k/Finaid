@@ -9,6 +9,7 @@ class AppSettings {
     this.disabledPackages = const {},
     this.notifyCaptures = true,
     this.expectedMonthlyIncomeMinor,
+    this.lastBackupAt,
   });
 
   final bool onboardingDone;
@@ -27,6 +28,9 @@ class AppSettings {
   /// el banco no notifica los ingresos.
   final int? expectedMonthlyIncomeMinor;
 
+  /// Cuándo se creó el último respaldo (para recordarlo en Consejos).
+  final DateTime? lastBackupAt;
+
   AppSettings copyWith({
     bool? onboardingDone,
     Set<String>? enabledPackages,
@@ -34,6 +38,7 @@ class AppSettings {
     bool? notifyCaptures,
     int? expectedMonthlyIncomeMinor,
     bool clearExpectedIncome = false,
+    DateTime? lastBackupAt,
   }) =>
       AppSettings(
         onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -43,6 +48,7 @@ class AppSettings {
         expectedMonthlyIncomeMinor: clearExpectedIncome
             ? null
             : expectedMonthlyIncomeMinor ?? this.expectedMonthlyIncomeMinor,
+        lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       );
 }
 
@@ -58,6 +64,7 @@ class AppSettingsStore {
   static const _knownDefaultsKey = 'known_default_packages';
   static const _notifyKey = 'notify_captures';
   static const _incomeKey = 'expected_income_minor';
+  static const _lastBackupKey = 'last_backup_at';
 
   /// Carga los ajustes. Los packages que se agregan a [KnownBanks] en una
   /// actualización (p. ej. el package real de BBVA) se activan solos, salvo que
@@ -83,6 +90,7 @@ class AppSettingsStore {
       disabledPackages: disabled,
       notifyCaptures: _prefs.getBool(_notifyKey) ?? true,
       expectedMonthlyIncomeMinor: income == null || income <= 0 ? null : income,
+      lastBackupAt: _date(_prefs.getInt(_lastBackupKey)),
     );
   }
 
@@ -95,6 +103,10 @@ class AppSettingsStore {
     await _prefs.setStringList(
         _knownDefaultsKey, KnownBanks.defaultPackages.toList()..sort());
     await _prefs.setBool(_notifyKey, settings.notifyCaptures);
+    final backup = settings.lastBackupAt;
+    if (backup != null) {
+      await _prefs.setInt(_lastBackupKey, backup.millisecondsSinceEpoch);
+    }
     final income = settings.expectedMonthlyIncomeMinor;
     if (income == null) {
       await _prefs.remove(_incomeKey);
@@ -103,3 +115,6 @@ class AppSettingsStore {
     }
   }
 }
+
+DateTime? _date(int? millis) =>
+    millis == null ? null : DateTime.fromMillisecondsSinceEpoch(millis);
