@@ -16,6 +16,7 @@ object CaptureNotifier {
 
     private const val CHANNEL_ID = "finaid_captures"
     private const val BUDGET_CHANNEL_ID = "finaid_budget"
+    private const val REMINDER_CHANNEL_ID = "finaid_reminders"
     private const val SELF_TEST_ID = 0x5E1F
 
     fun hasPermission(context: Context): Boolean =
@@ -37,6 +38,13 @@ object CaptureNotifier {
                 NotificationChannel(
                     BUDGET_CHANNEL_ID, "Alertas de presupuesto", NotificationManager.IMPORTANCE_HIGH
                 ).apply { description = "Cuando un gasto te lleva al 80% o al 100% del presupuesto" }
+            )
+        }
+        if (manager.getNotificationChannel(REMINDER_CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    REMINDER_CHANNEL_ID, "Recordatorios de pagos", NotificationManager.IMPORTANCE_DEFAULT
+                ).apply { description = "Avisos antes de pagos mensuales: suscripciones, servicios, arriendo" }
             )
         }
     }
@@ -94,6 +102,24 @@ object CaptureNotifier {
         val notification = b.build()
         val id = (System.currentTimeMillis() and 0x7fffffff).toInt()
         manager.notify(id, notification)
+    }
+
+    /** Recordatorio de un pago recurrente (lo dispara ReminderReceiver). */
+    fun showReminder(context: Context, id: Int, title: String, body: String, hideOnLockScreen: Boolean) {
+        if (!hasPermission(context)) return
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val b = builder(context, manager, REMINDER_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+        if (hideOnLockScreen) {
+            val publicVersion = builder(context, manager, REMINDER_CHANNEL_ID)
+                .setContentTitle("Finaid")
+                .setContentText("Recordatorio de pago")
+                .build()
+            b.setVisibility(Notification.VISIBILITY_PRIVATE).setPublicVersion(publicVersion)
+        }
+        manager.notify(id, b.build())
     }
 
     /**

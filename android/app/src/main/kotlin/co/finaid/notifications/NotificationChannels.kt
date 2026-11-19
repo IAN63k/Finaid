@@ -116,6 +116,16 @@ object NotificationChannels {
                     result.success(null)
                 }
                 "postSelfTest" -> result.success(CaptureNotifier.showSelfTest(appContext))
+                "scheduleReminders" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val items = (call.argument<List<Map<String, Any?>>>("items") ?: emptyList())
+                    try {
+                        ReminderScheduler.schedule(appContext, items)
+                        result.success(items.size)
+                    } catch (e: Exception) {
+                        result.error("schedule_failed", e.message, null)
+                    }
+                }
                 "deviceInfo" -> result.success(
                     mapOf(
                         "manufacturer" to Build.MANUFACTURER,
