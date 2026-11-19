@@ -17,14 +17,17 @@ class IngestionService with WidgetsBindingObserver {
     required this.ingest,
     required this.onTransactionsChanged,
     this.onResumed,
-    this.notifyCapture,
+    this.onNewTransaction,
   });
 
   final List<NotificationSource> sources;
   final IngestNotificationUseCase ingest;
   final VoidCallback onTransactionsChanged;
   final VoidCallback? onResumed;
-  final Future<void> Function(Transaction transaction)? notifyCapture;
+  /// Se llama por cada movimiento nuevo, indicando si la app está en pantalla
+  /// (para decidir entre aviso del sistema o alerta dentro de la app).
+  final Future<void> Function(Transaction transaction, bool inForeground)?
+      onNewTransaction;
 
   final List<StreamSubscription<RawNotification>> _subscriptions = [];
   final List<NotificationSource> _active = [];
@@ -78,8 +81,9 @@ class IngestionService with WidgetsBindingObserver {
       }
       if (result.isNewTransaction) {
         if (notify) onTransactionsChanged();
-        if (!_inForeground && notifyCapture != null) {
-          await notifyCapture!(result.transaction!);
+        final callback = onNewTransaction;
+        if (callback != null) {
+          await callback(result.transaction!, _inForeground);
         }
       }
       return result.isNewTransaction;

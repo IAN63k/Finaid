@@ -134,8 +134,13 @@ class AndroidNotificationSource implements NotificationSource {
   Future<void> showCaptureNotification({
     required String title,
     required String body,
+    bool budget = false,
   }) =>
-      _call('showCaptureNotification', {'title': title, 'body': body});
+      _call('showCaptureNotification', {
+        'title': title,
+        'body': body,
+        'channel': budget ? 'budget' : 'captures',
+      });
 
   /// Publica la notificación de autoprueba. `false` si no hay permiso de avisos.
   Future<bool> postSelfTest() => _bool('postSelfTest');

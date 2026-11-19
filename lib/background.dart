@@ -41,14 +41,22 @@ Future<void> backgroundMain() async {
         final pending = await source.drainPending();
         if (pending.isEmpty) continue;
         final ingest = container.read(ingestUseCaseProvider);
+        final budgets = container.read(budgetAlertServiceProvider);
         final settings = container.read(settingsStoreProvider).load();
         for (final n in pending) {
           try {
             final result = await ingest(n);
-            if (result.isNewTransaction && settings.notifyCaptures) {
-              final text = CaptureNotificationText.of(result.transaction!);
+            if (!result.isNewTransaction) continue;
+            final transaction = result.transaction!;
+            final alerts = CaptureAlerts.plan(
+              transaction: transaction,
+              budget: await budgets.check(transaction),
+              notifyCaptures: settings.notifyCaptures,
+              budgetAlerts: settings.budgetAlerts,
+            );
+            for (final a in alerts) {
               await source.showCaptureNotification(
-                  title: text.title, body: text.body);
+                  title: a.title, body: a.body, budget: a.isBudgetAlert);
             }
           } catch (e, st) {
             debugPrint('Finaid(bg): error ingiriendo: $e\n$st');

@@ -15,6 +15,7 @@ import co.finaid.R
 object CaptureNotifier {
 
     private const val CHANNEL_ID = "finaid_captures"
+    private const val BUDGET_CHANNEL_ID = "finaid_budget"
     private const val SELF_TEST_ID = 0x5E1F
 
     fun hasPermission(context: Context): Boolean =
@@ -22,19 +23,30 @@ object CaptureNotifier {
             context.checkSelfPermission("android.permission.POST_NOTIFICATIONS") ==
             PackageManager.PERMISSION_GRANTED
 
-    private fun ensureChannel(manager: NotificationManager) {
+    private fun ensureChannels(manager: NotificationManager) {
         if (Build.VERSION.SDK_INT < 26) return
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-        val channel = NotificationChannel(
-            CHANNEL_ID, "Movimientos detectados", NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = "Aviso cuando Finaid registra una compra, pago o ingreso"
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID, "Movimientos detectados", NotificationManager.IMPORTANCE_DEFAULT
+                ).apply { description = "Aviso cuando Finaid registra una compra, pago o ingreso" }
+            )
         }
-        manager.createNotificationChannel(channel)
+        if (manager.getNotificationChannel(BUDGET_CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    BUDGET_CHANNEL_ID, "Alertas de presupuesto", NotificationManager.IMPORTANCE_HIGH
+                ).apply { description = "Cuando un gasto te lleva al 80% o al 100% del presupuesto" }
+            )
+        }
     }
 
-    private fun builder(context: Context, manager: NotificationManager): Notification.Builder {
-        ensureChannel(manager)
+    private fun builder(
+        context: Context,
+        manager: NotificationManager,
+        channelId: String = CHANNEL_ID,
+    ): Notification.Builder {
+        ensureChannels(manager)
         val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pending = if (launch == null) null else PendingIntent.getActivity(
@@ -43,7 +55,7 @@ object CaptureNotifier {
 
         @Suppress("DEPRECATION")
         val b = if (Build.VERSION.SDK_INT >= 26) {
-            Notification.Builder(context, CHANNEL_ID)
+            Notification.Builder(context, channelId)
         } else {
             Notification.Builder(context).setPriority(Notification.PRIORITY_DEFAULT)
         }
@@ -54,10 +66,10 @@ object CaptureNotifier {
         return b
     }
 
-    fun show(context: Context, title: String, body: String) {
+    fun show(context: Context, title: String, body: String, budget: Boolean = false) {
         if (!hasPermission(context)) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notification = builder(context, manager)
+        val notification = builder(context, manager, if (budget) BUDGET_CHANNEL_ID else CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(Notification.BigTextStyle().bigText(body))

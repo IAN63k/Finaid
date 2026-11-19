@@ -23,6 +23,7 @@ import '../infrastructure/settings/app_settings_store.dart';
 import '../infrastructure/backup/backup_codec.dart';
 import '../infrastructure/platform/document_storage.dart';
 import 'backup_service.dart';
+import 'budget_alert_service.dart';
 import 'capture_notification_text.dart';
 import 'ingestion_service.dart';
 
@@ -111,14 +112,28 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
       ref.invalidate(listenerStatusProvider);
       ref.read(settingsProvider.notifier).autoEnableDetectedBanks();
     },
-    notifyCapture: android == null
-        ? null
-        : (transaction) async {
-            if (!ref.read(settingsProvider).notifyCaptures) return;
-            final text = CaptureNotificationText.of(transaction);
-            await android.showCaptureNotification(
-                title: text.title, body: text.body);
-          },
+    onNewTransaction: (transaction, inForeground) async {
+      final settings = ref.read(settingsProvider);
+      final budget =
+          await ref.read(budgetAlertServiceProvider).check(transaction);
+      final alerts = CaptureAlerts.plan(
+        transaction: transaction,
+        budget: budget,
+        notifyCaptures: settings.notifyCaptures,
+        budgetAlerts: settings.budgetAlerts,
+      );
+      if (inForeground) {
+        // Con la app abierta solo se muestran las alertas de presupuesto.
+        for (final a in alerts.where((a) => a.isBudgetAlert)) {
+          ref.read(foregroundAlertProvider.notifier).show(a);
+        }
+      } else if (android != null) {
+        for (final a in alerts) {
+          await android.showCaptureNotification(
+              title: a.title, body: a.body, budget: a.isBudgetAlert);
+        }
+      }
+    },
   );
   ref.onDispose(service.dispose);
   return service;
@@ -204,6 +219,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   Future<void> setNotifyCaptures(bool enabled) =>
       _update(state.copyWith(notifyCaptures: enabled));
+
+  Future<void> setBudgetAlerts(bool enabled) =>
+      _update(state.copyWith(budgetAlerts: enabled));
 
   Future<void> markBackupCreated(DateTime at) =>
       _update(state.copyWith(lastBackupAt: at));
@@ -356,3 +374,37 @@ final backupServiceProvider = Provider<BackupService>(
     rawNotifications: ref.watch(rawNotificationRepositoryProvider),
   ),
 );
+
+// ---------------------------------------------------------------------------
+// Alertas de presupuesto
+// ---------------------------------------------------------------------------
+
+final budgetAlertServiceProvider = Provider<BudgetAlertService>(
+  (ref) => BudgetAlertService(
+    transactions: ref.watch(transactionRepositoryProvider),
+    budgets: ref.watch(budgetRepositoryProvider),
+  ),
+);
+
+/// Alerta para mostrar dentro de la app (la escucha FinaidApp y la muestra
+/// como SnackBar). Cada alerta lleva un número para que dos iguales seguidas
+/// también se muestren.
+class ForegroundAlert {
+  const ForegroundAlert(this.sequence, this.alert);
+
+  final int sequence;
+  final CaptureAlert alert;
+}
+
+class ForegroundAlertNotifier extends Notifier<ForegroundAlert?> {
+  var _sequence = 0;
+
+  @override
+  ForegroundAlert? build() => null;
+
+  void show(CaptureAlert alert) => state = ForegroundAlert(++_sequence, alert);
+}
+
+final foregroundAlertProvider =
+    NotifierProvider<ForegroundAlertNotifier, ForegroundAlert?>(
+        ForegroundAlertNotifier.new);

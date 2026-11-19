@@ -110,6 +110,7 @@ object NotificationChannels {
                         appContext,
                         call.argument<String>("title") ?: "Finaid",
                         call.argument<String>("body") ?: "",
+                        call.argument<String>("channel") == "budget",
                     )
                     result.success(null)
                 }

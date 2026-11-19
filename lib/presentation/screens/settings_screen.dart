@@ -129,14 +129,27 @@ class SettingsScreen extends ConsumerWidget {
           const SectionTitle('Avisos'),
           Card(
             elevation: 0,
-            child: SwitchListTile(
-              secondary: const Icon(Icons.notifications_active_outlined),
-              title: const Text('Avisar cuando registre un movimiento'),
-              subtitle: const Text(
-                  'Una notificación de Finaid con el monto, el comercio y la categoría.'),
-              value: settings.notifyCaptures,
-              onChanged: (v) =>
-                  ref.read(settingsProvider.notifier).setNotifyCaptures(v),
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_active_outlined),
+                  title: const Text('Avisar cuando registre un movimiento'),
+                  subtitle: const Text(
+                      'Una notificación de Finaid con el monto, el comercio, la categoría y cómo va su presupuesto.'),
+                  value: settings.notifyCaptures,
+                  onChanged: (v) =>
+                      ref.read(settingsProvider.notifier).setNotifyCaptures(v),
+                ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.savings_outlined),
+                  title: const Text('Alertas de presupuesto'),
+                  subtitle: const Text(
+                      'Aviso destacado cuando un gasto te lleva al 80% o al 100% del presupuesto de su categoría, también con la app abierta.'),
+                  value: settings.budgetAlerts,
+                  onChanged: (v) =>
+                      ref.read(settingsProvider.notifier).setBudgetAlerts(v),
+                ),
+              ],
             ),
           ),
 

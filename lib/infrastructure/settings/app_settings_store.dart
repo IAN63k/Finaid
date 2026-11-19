@@ -8,6 +8,7 @@ class AppSettings {
     required this.enabledPackages,
     this.disabledPackages = const {},
     this.notifyCaptures = true,
+    this.budgetAlerts = true,
     this.expectedMonthlyIncomeMinor,
     this.lastBackupAt,
   });
@@ -24,6 +25,9 @@ class AppSettings {
   /// Mostrar un aviso de Finaid cada vez que registra un movimiento.
   final bool notifyCaptures;
 
+  /// Avisar al cruzar el 80% y el 100% del presupuesto de una categoría.
+  final bool budgetAlerts;
+
   /// Ingreso mensual estimado (unidades menores). Se usa en los consejos cuando
   /// el banco no notifica los ingresos.
   final int? expectedMonthlyIncomeMinor;
@@ -36,6 +40,7 @@ class AppSettings {
     Set<String>? enabledPackages,
     Set<String>? disabledPackages,
     bool? notifyCaptures,
+    bool? budgetAlerts,
     int? expectedMonthlyIncomeMinor,
     bool clearExpectedIncome = false,
     DateTime? lastBackupAt,
@@ -45,6 +50,7 @@ class AppSettings {
         enabledPackages: enabledPackages ?? this.enabledPackages,
         disabledPackages: disabledPackages ?? this.disabledPackages,
         notifyCaptures: notifyCaptures ?? this.notifyCaptures,
+        budgetAlerts: budgetAlerts ?? this.budgetAlerts,
         expectedMonthlyIncomeMinor: clearExpectedIncome
             ? null
             : expectedMonthlyIncomeMinor ?? this.expectedMonthlyIncomeMinor,
@@ -63,6 +69,7 @@ class AppSettingsStore {
   static const _disabledKey = 'disabled_packages';
   static const _knownDefaultsKey = 'known_default_packages';
   static const _notifyKey = 'notify_captures';
+  static const _budgetAlertsKey = 'budget_alerts';
   static const _incomeKey = 'expected_income_minor';
   static const _lastBackupKey = 'last_backup_at';
 
@@ -89,6 +96,7 @@ class AppSettingsStore {
       enabledPackages: enabled,
       disabledPackages: disabled,
       notifyCaptures: _prefs.getBool(_notifyKey) ?? true,
+      budgetAlerts: _prefs.getBool(_budgetAlertsKey) ?? true,
       expectedMonthlyIncomeMinor: income == null || income <= 0 ? null : income,
       lastBackupAt: _date(_prefs.getInt(_lastBackupKey)),
     );
@@ -103,6 +111,7 @@ class AppSettingsStore {
     await _prefs.setStringList(
         _knownDefaultsKey, KnownBanks.defaultPackages.toList()..sort());
     await _prefs.setBool(_notifyKey, settings.notifyCaptures);
+    await _prefs.setBool(_budgetAlertsKey, settings.budgetAlerts);
     final backup = settings.lastBackupAt;
     if (backup != null) {
       await _prefs.setInt(_lastBackupKey, backup.millisecondsSinceEpoch);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/capture_notification_text.dart';
 import '../../application/providers.dart';
 import '../../core/utils/date_utils.dart';
 import '../../domain/entities/category.dart';
@@ -82,7 +83,7 @@ class _ManualTransactionSheetState extends ConsumerState<ManualTransactionSheet>
       _saving = true;
       _error = null;
     });
-    await ref.read(editUseCasesProvider).addManual(
+    final transaction = await ref.read(editUseCasesProvider).addManual(
           amountMinor: pesos * 100,
           kind: _income ? TransactionKind.deposit : TransactionKind.purchase,
           description: description,
@@ -90,6 +91,19 @@ class _ManualTransactionSheetState extends ConsumerState<ManualTransactionSheet>
           occurredAt: _when,
         );
     await ref.read(transactionsProvider.notifier).reload();
+
+    // Si el gasto cruza el 80% o el 100% del presupuesto, avisar igual que
+    // con las compras detectadas.
+    final settings = ref.read(settingsProvider);
+    if (!_income && settings.budgetAlerts) {
+      final budget =
+          await ref.read(budgetAlertServiceProvider).check(transaction);
+      if (budget != null && budget.crossedThreshold) {
+        final text = BudgetAlertText.alert(budget, transaction);
+        ref.read(foregroundAlertProvider.notifier).show(CaptureAlert(
+            title: text.title, body: text.body, isBudgetAlert: true));
+      }
+    }
     if (mounted) Navigator.of(context).pop();
   }
 

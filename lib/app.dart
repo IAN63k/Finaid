@@ -15,6 +15,30 @@ class FinaidApp extends ConsumerStatefulWidget {
 }
 
 class _FinaidAppState extends ConsumerState<FinaidApp> {
+  /// Para mostrar alertas (presupuesto) sobre cualquier pantalla.
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  void _showAlert(ForegroundAlert alert) {
+    final messenger = _messengerKey.currentState;
+    if (messenger == null) return;
+    final a = alert.alert;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        duration: const Duration(seconds: 6),
+        showCloseIcon: true,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(a.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text(a.body),
+          ],
+        ),
+      ));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -30,8 +54,12 @@ class _FinaidAppState extends ConsumerState<FinaidApp> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    ref.listen<ForegroundAlert?>(foregroundAlertProvider, (_, next) {
+      if (next != null) _showAlert(next);
+    });
     return MaterialApp(
       title: 'Finaid',
+      scaffoldMessengerKey: _messengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
