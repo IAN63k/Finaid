@@ -7,6 +7,20 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-19
+
+### Añadido
+
+- **Guía según el teléfono** (Ajustes → Captura de notificaciones → *Configura tu …*):
+  pasos de batería y segundo plano para Samsung, Xiaomi/Redmi/POCO, Huawei, Honor,
+  OPPO, realme, OnePlus, vivo/iQOO, Motorola y Pixel, detectando el fabricante.
+  Botones para abrir la pantalla de **Inicio automático** de la marca (con varias rutas
+  conocidas y la ficha de la app como respaldo), *Batería* e *Información de la app*.
+- **"Ajuste restringido"** (Android 13+): pasos para habilitar el acceso a
+  notificaciones cuando la app se instaló desde un APK, en la guía y en la bienvenida
+  ("¿El interruptor sale gris?").
+- Documentación por marca en `docs/PRUEBA_EN_CELULAR.md`.
+
 ## [0.9.0] - 2026-11-19
 
 ### Añadido
@@ -288,7 +302,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/IAN63k/Finaid/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/IAN63k/Finaid/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/IAN63k/Finaid/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/IAN63k/Finaid/compare/v0.7.1...v0.7.2
