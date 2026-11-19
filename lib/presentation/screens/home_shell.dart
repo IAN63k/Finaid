@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/app_lock.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/insight.dart';
 import 'dashboard_screen.dart';
@@ -25,6 +26,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   /// confirmación antes de cerrar la app. Las hojas y páginas abiertas encima
   /// se cierran antes de llegar aquí, porque son rutas propias.
   Future<void> _handleBack() async {
+    // Con la app bloqueada no se muestra nada: atrás la manda al fondo.
+    if (ref.read(appLockProvider)) {
+      await SystemNavigator.pop();
+      return;
+    }
     if (_index != 0) {
       _go(0);
       return;

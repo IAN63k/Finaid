@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'application/app_lock.dart';
 import 'application/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/home_shell.dart';
 import 'presentation/screens/onboarding_screen.dart';
+import 'presentation/widgets/app_lock_gate.dart';
 
 class FinaidApp extends ConsumerStatefulWidget {
   const FinaidApp({super.key});
@@ -55,11 +57,14 @@ class _FinaidAppState extends ConsumerState<FinaidApp> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     ref.listen<ForegroundAlert?>(foregroundAlertProvider, (_, next) {
-      if (next != null) _showAlert(next);
+      // Con la app bloqueada no se muestran montos en pantalla.
+      if (next != null && !ref.read(appLockProvider)) _showAlert(next);
     });
     return MaterialApp(
       title: 'Finaid',
       scaffoldMessengerKey: _messengerKey,
+      builder: (context, child) =>
+          AppLockGate(child: child ?? const SizedBox.shrink()),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

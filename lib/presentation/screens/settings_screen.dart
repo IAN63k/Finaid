@@ -18,6 +18,7 @@ import 'backup_screen.dart';
 import 'capture_tools.dart';
 import 'detected_apps_screen.dart';
 import 'merchant_rules_screen.dart';
+import 'security_settings.dart';
 import 'simulate_notification_screen.dart';
 
 
@@ -198,6 +199,9 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+
+          const SectionTitle('Seguridad'),
+          const SecuritySettingsCard(),
 
           const SectionTitle('Tus datos'),
           Card(
