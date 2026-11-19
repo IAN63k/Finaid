@@ -61,6 +61,9 @@ class MonthSummary {
 
   int get balanceMinor => incomeMinor - expensesMinor;
 
+  /// Movimientos del mes que cuentan (gastos e ingresos, sin ignorados).
+  int get movementCount => transactions.where((t) => !t.ignored).length;
+
   List<MapEntry<String, int>> get categoriesSorted =>
       byCategory.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 

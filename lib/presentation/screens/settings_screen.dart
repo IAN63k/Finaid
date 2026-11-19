@@ -6,17 +6,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/app_info.dart';
 import '../../core/utils/money_format.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
 import 'capture_log_screen.dart';
+import 'capture_tools.dart';
 import 'detected_apps_screen.dart';
 import 'merchant_rules_screen.dart';
 import 'simulate_notification_screen.dart';
 
-const String appVersionLabel = 'Finaid 0.2.1';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -471,6 +472,28 @@ class _ServiceStatusCard extends ConsumerWidget {
                   tooltip: 'Volver a comprobar',
                   onPressed: refresh,
                   icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    onPressed: () => runCaptureSelfTest(context, ref),
+                    icon: const Icon(Icons.play_circle_outline),
+                    label: const Text('Probar captura'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => copyDiagnostics(context, ref),
+                    icon: const Icon(Icons.content_copy),
+                    label: const Text('Copiar diagnóstico'),
+                  ),
                 ),
               ],
             ),

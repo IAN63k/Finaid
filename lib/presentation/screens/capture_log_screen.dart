@@ -8,6 +8,7 @@ import '../../domain/entities/bank.dart';
 import '../../domain/ports/repositories.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/ignore_reason_label.dart';
+import 'capture_tools.dart';
 
 /// Diagnóstico: qué notificaciones llegaron a Finaid y qué se hizo con cada una.
 /// Si una compra real no aparece aquí, el problema es la captura (permiso,
@@ -57,6 +58,11 @@ class _CaptureLogScreenState extends ConsumerState<CaptureLogScreen> {
       appBar: AppBar(
         title: const Text('Notificaciones recibidas'),
         actions: [
+          IconButton(
+            tooltip: 'Copiar diagnóstico',
+            icon: const Icon(Icons.content_copy),
+            onPressed: () => copyDiagnostics(context, ref),
+          ),
           IconButton(
             tooltip: 'Actualizar',
             icon: const Icon(Icons.refresh),

@@ -8,6 +8,7 @@ String ignoreReasonLabel(String? reason) => switch (reason) {
       'sin_monto' => 'No se encontró un monto',
       'sin_verbo' => 'No parece una compra, pago o transferencia',
       'notificacion_repetida' => 'La misma notificación ya se había procesado',
+      'ok' => 'Leída correctamente',
       'movimiento_repetido' =>
         'Ya existe un movimiento igual (push + SMS del mismo banco)',
       null => 'Sin motivo registrado',
@@ -18,5 +19,6 @@ String statusLabel(String status) => switch (status) {
       'parsed' => 'Registrada',
       'ignored' => 'Ignorada',
       'duplicate' => 'Duplicada',
+      'selftest' => 'Autoprueba',
       _ => 'Pendiente',
     };
