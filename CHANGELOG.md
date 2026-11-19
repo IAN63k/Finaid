@@ -7,6 +7,36 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-19
+
+Las compras de BBVA no se registraban: Finaid escuchaba un package equivocado
+(`com.bbva.nxt_colombia`) y el real es `co.com.bbva.mb`. El parser ya entendía el
+texto ("realizaste una compra por $26,190.00 en Mp*agc tecnologia…").
+
+### Corregido
+
+- Package real de BBVA Colombia (`co.com.bbva.mb`).
+- Los packages que se agregan a la lista en una actualización se activan solos en
+  instalaciones existentes, salvo que el usuario los haya desactivado.
+- El contador "Movimientos" del inicio incluye ingresos, no solo gastos.
+
+### Añadido
+
+- Detección automática de apps bancarias por package o nombre visible (BBVA, Bancolombia,
+  Itaú, AV Villas, Caja Social, "banco", "bank"…): se escuchan sin configurar nada,
+  salvo que el usuario las apague. Las desactivaciones explícitas se respetan.
+- **Probar captura**: Finaid publica una notificación de prueba y verifica el camino
+  completo (servicio nativo → parser) sin crear movimientos.
+- **Copiar diagnóstico**: reporte al portapapeles con estado del servicio, fuentes,
+  apps que han notificado y últimas notificaciones recibidas.
+- Logo de Finaid: ícono adaptativo con versión monocromática (íconos temáticos de One UI),
+  splash, ícono de los avisos y marca en la app. Archivos en `docs/brand/`.
+- Herramientas de desarrollo: `tool/android_diag.ps1` (diagnóstico por ADB),
+  `tool/android_install_latest.ps1` (instala el último release), `tool/setup_signing.ps1`
+  (firma estable) y guía `docs/DESARROLLO.md` con ADB por Wi-Fi.
+- El workflow de release firma con la llave del repositorio si existen los secretos;
+  si no, con una llave efímera, aplicando siempre el mismo bloque de firma.
+
 ## [0.2.1] - 2026-11-17
 
 Primera notificación real de Nequi capturada en el S26 Ultra pero descartada por el
@@ -95,7 +125,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/IAN63k/Finaid/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/IAN63k/Finaid/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/IAN63k/Finaid/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/IAN63k/Finaid/compare/v0.1.0...v0.1.1
