@@ -28,9 +28,14 @@ class IngestionService with WidgetsBindingObserver {
 
   final List<StreamSubscription<RawNotification>> _subscriptions = [];
   final List<NotificationSource> _active = [];
+  final StreamController<IngestResult> _selfTests =
+      StreamController.broadcast();
   bool _started = false;
   bool _draining = false;
   bool _inForeground = true;
+
+  /// Resultados de la autoprueba de captura ("Probar captura" en Ajustes).
+  Stream<IngestResult> get selfTestResults => _selfTests.stream;
 
   Future<void> start() async {
     if (_started) return;
@@ -67,6 +72,10 @@ class IngestionService with WidgetsBindingObserver {
   Future<bool> handle(RawNotification notification, {bool notify = true}) async {
     try {
       final result = await ingest(notification);
+      if (result.status == IngestStatus.selfTest) {
+        _selfTests.add(result);
+        return false;
+      }
       if (result.isNewTransaction) {
         if (notify) onTransactionsChanged();
         if (!_inForeground && notifyCapture != null) {
@@ -93,6 +102,7 @@ class IngestionService with WidgetsBindingObserver {
 
   Future<void> dispose() async {
     WidgetsBinding.instance.removeObserver(this);
+    await _selfTests.close();
     for (final s in _subscriptions) {
       await s.cancel();
     }

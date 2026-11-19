@@ -1,3 +1,5 @@
+import '../../core/utils/text_tools.dart';
+
 /// Perfil de una entidad financiera: cómo reconocer sus notificaciones.
 class BankProfile {
   const BankProfile({
@@ -61,7 +63,8 @@ class KnownBanks {
   static const bbva = BankProfile(
     id: 'bbva',
     name: 'BBVA',
-    packages: ['com.bbva.nxt_colombia'],
+    // "BBVA Colombia | Banca Móvil" en Google Play.
+    packages: ['co.com.bbva.mb'],
     signatures: ['bbva'],
     color: 0xFF072146,
   );
@@ -161,5 +164,30 @@ class KnownBanks {
   static BankProfile byId(String id) {
     if (id == manual.id) return manual;
     return all.firstWhere((b) => b.id == id, orElse: () => unknown);
+  }
+}
+
+/// Reconoce apps bancarias por su package o su nombre visible, para escucharlas
+/// aunque su package no esté en [KnownBanks]. Debe coincidir con
+/// `BankDetector` en Kotlin (android/.../BankPackages.kt).
+class BankDetector {
+  BankDetector._();
+
+  static const List<String> keywords = [
+    'bbva', 'bancolombia', 'todo1', 'nequi', 'davivienda', 'daviplata', 'nubank',
+    'bancodebogota', 'banco de bogota', 'lulobank', 'lulo bank', 'rappipay',
+    'rappi pay', 'scotiabank', 'colpatria', 'itau', 'avvillas', 'av villas',
+    'bancoomeva', 'bancodeoccidente', 'banco de occidente', 'bancopopular',
+    'banco popular', 'bancofalabella', 'banco falabella', 'cajasocial',
+    'caja social', 'pichincha', 'movii', 'bancoagrario', 'banco agrario',
+    'finandina', 'serfinanza', 'sudameris', 'bancamia', 'coopcentral', 'uala',
+    'global66', 'tpaga',
+    // Genéricos
+    'banco', 'bank', 'banca movil', 'bancamovil',
+  ];
+
+  static bool looksLikeBank(String package, String? label) {
+    final hay = TextTools.normalize('$package ${label ?? ''}');
+    return keywords.any(hay.contains);
   }
 }

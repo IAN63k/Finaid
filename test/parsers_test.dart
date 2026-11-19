@@ -199,6 +199,27 @@ void main() {
     });
   });
 
+  group('BBVA (formato real de compra)', () {
+    test('compra con tarjeta, procesador Mercado Pago y fecha ISO', () {
+      final t = registry
+          .parse(raw(
+            package: Samples.bbvaPackage,
+            title: Samples.bbvaCompraTitle,
+            text: Samples.bbvaCompra,
+            postedAt: DateTime(2026, 11, 17, 0, 39, 30),
+          ))
+          .transaction!;
+      expect(t.kind, TransactionKind.purchase);
+      expect(t.amountMinor, 2619000);
+      expect(t.currency, 'COP');
+      expect(t.merchantRaw, 'agc tecnologia');
+      expect(t.accountHint, '2484');
+      expect(t.occurredAt, DateTime(2026, 11, 17, 0, 39));
+      expect(t.bankId, 'bbva');
+      expect(t.confidence, 1.0);
+    });
+  });
+
   group('BBVA (llaves Bre-B)', () {
     test('envío con llave: destinatario antes del verbo y fecha ISO', () {
       final t = registry

@@ -114,6 +114,24 @@ void main() {
     expect(t.ignored, isTrue);
   });
 
+  test('la autoprueba se parsea pero no crea movimientos', () async {
+    final n = raw(
+      package: RawNotification.selfTestPackage,
+      title: 'Finaid · prueba de captura',
+      text: 'Compraste \$1.000 en PRUEBA FINAID con tu tarjeta *0000.',
+    );
+    final result = await ingest(n);
+    expect(result.status, IngestStatus.selfTest);
+    expect(result.isNewTransaction, isFalse);
+    final outcome = result.selfTestOutcome!;
+    expect(outcome.isTransaction, isTrue);
+    expect(outcome.transaction!.amountMinor, 100000);
+    expect(outcome.transaction!.merchantRaw, 'PRUEBA FINAID');
+    expect(await transactions.all(), isEmpty);
+    expect(raws.status[n.id]!.status, 'selftest');
+    expect(raws.status[n.id]!.reason, 'ok');
+  });
+
   test('el registro de recibidas conserva estado y motivo', () async {
     await ingest(raw(
       package: Samples.nequiPackage,

@@ -6,6 +6,7 @@ class AppSettings {
   const AppSettings({
     required this.onboardingDone,
     required this.enabledPackages,
+    this.disabledPackages = const {},
     this.notifyCaptures = true,
     this.expectedMonthlyIncomeMinor,
   });
@@ -14,6 +15,10 @@ class AppSettings {
 
   /// Packages que el servicio nativo debe escuchar.
   final Set<String> enabledPackages;
+
+  /// Packages que el usuario desactivó explícitamente. Ganan sobre los
+  /// valores por defecto y sobre la detección automática de apps bancarias.
+  final Set<String> disabledPackages;
 
   /// Mostrar un aviso de Finaid cada vez que registra un movimiento.
   final bool notifyCaptures;
@@ -25,6 +30,7 @@ class AppSettings {
   AppSettings copyWith({
     bool? onboardingDone,
     Set<String>? enabledPackages,
+    Set<String>? disabledPackages,
     bool? notifyCaptures,
     int? expectedMonthlyIncomeMinor,
     bool clearExpectedIncome = false,
@@ -32,6 +38,7 @@ class AppSettings {
       AppSettings(
         onboardingDone: onboardingDone ?? this.onboardingDone,
         enabledPackages: enabledPackages ?? this.enabledPackages,
+        disabledPackages: disabledPackages ?? this.disabledPackages,
         notifyCaptures: notifyCaptures ?? this.notifyCaptures,
         expectedMonthlyIncomeMinor: clearExpectedIncome
             ? null
@@ -47,16 +54,33 @@ class AppSettingsStore {
 
   static const _onboardingKey = 'onboarding_done';
   static const _packagesKey = 'enabled_packages';
+  static const _disabledKey = 'disabled_packages';
+  static const _knownDefaultsKey = 'known_default_packages';
   static const _notifyKey = 'notify_captures';
   static const _incomeKey = 'expected_income_minor';
 
+  /// Carga los ajustes. Los packages que se agregan a [KnownBanks] en una
+  /// actualización (p. ej. el package real de BBVA) se activan solos, salvo que
+  /// el usuario los haya desactivado.
   AppSettings load() {
     final stored = _prefs.getStringList(_packagesKey);
+    final disabled = (_prefs.getStringList(_disabledKey) ?? const []).toSet();
+    final known = (_prefs.getStringList(_knownDefaultsKey) ?? const []).toSet();
+    final defaults = KnownBanks.defaultPackages.toSet();
+
+    final Set<String> enabled;
+    if (stored == null) {
+      enabled = defaults.difference(disabled);
+    } else {
+      final newDefaults = defaults.difference(known).difference(disabled);
+      enabled = {...stored, ...newDefaults};
+    }
+
     final income = _prefs.getInt(_incomeKey);
     return AppSettings(
       onboardingDone: _prefs.getBool(_onboardingKey) ?? false,
-      enabledPackages:
-          stored == null ? KnownBanks.defaultPackages.toSet() : stored.toSet(),
+      enabledPackages: enabled,
+      disabledPackages: disabled,
       notifyCaptures: _prefs.getBool(_notifyKey) ?? true,
       expectedMonthlyIncomeMinor: income == null || income <= 0 ? null : income,
     );
@@ -66,6 +90,10 @@ class AppSettingsStore {
     await _prefs.setBool(_onboardingKey, settings.onboardingDone);
     await _prefs.setStringList(
         _packagesKey, settings.enabledPackages.toList()..sort());
+    await _prefs.setStringList(
+        _disabledKey, settings.disabledPackages.toList()..sort());
+    await _prefs.setStringList(
+        _knownDefaultsKey, KnownBanks.defaultPackages.toList()..sort());
     await _prefs.setBool(_notifyKey, settings.notifyCaptures);
     final income = settings.expectedMonthlyIncomeMinor;
     if (income == null) {

@@ -2,7 +2,6 @@ package co.finaid.notifications
 
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -79,12 +78,14 @@ object NotificationChannels {
                     store.setAllowedPackages(packages.toSet())
                     result.success(null)
                 }
+                "setDisabledPackages" -> {
+                    val packages = call.argument<List<String>>("packages") ?: emptyList()
+                    store.setDisabledPackages(packages.toSet())
+                    result.success(null)
+                }
                 "getSeenPackages" -> Thread {
                     val rows = try {
-                        store.seenPackages().map { row ->
-                            val pkg = row["package"] as String
-                            row + ("label" to appLabel(appContext, pkg))
-                        }
+                        store.seenPackages()
                     } catch (e: Exception) {
                         emptyList()
                     }
@@ -112,6 +113,15 @@ object NotificationChannels {
                     )
                     result.success(null)
                 }
+                "postSelfTest" -> result.success(CaptureNotifier.showSelfTest(appContext))
+                "deviceInfo" -> result.success(
+                    mapOf(
+                        "manufacturer" to Build.MANUFACTURER,
+                        "model" to Build.MODEL,
+                        "sdk" to Build.VERSION.SDK_INT,
+                        "release" to Build.VERSION.RELEASE,
+                    )
+                )
                 else -> result.notImplemented()
             }
         }
@@ -128,14 +138,5 @@ object NotificationChannels {
                 NotificationEventBus.sink = null
             }
         })
-    }
-
-    private fun appLabel(context: Context, pkg: String): String = try {
-        val pm = context.packageManager
-        pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
-    } catch (e: PackageManager.NameNotFoundException) {
-        pkg
-    } catch (e: Exception) {
-        pkg
     }
 }

@@ -8,10 +8,11 @@ import '../parsing/parse_result.dart';
 import '../parsing/parser_registry.dart';
 import '../ports/repositories.dart';
 
-enum IngestStatus { ingested, ignored, duplicate }
+enum IngestStatus { ingested, ignored, duplicate, selfTest }
 
 class IngestResult {
-  const IngestResult._(this.status, {this.transaction, this.reason});
+  const IngestResult._(this.status,
+      {this.transaction, this.reason, this.selfTestOutcome});
 
   const IngestResult.ingested(Transaction transaction)
       : this._(IngestStatus.ingested, transaction: transaction);
@@ -22,9 +23,14 @@ class IngestResult {
   const IngestResult.duplicate(String reason)
       : this._(IngestStatus.duplicate, reason: reason);
 
+  /// La autoprueba de captura llegó: se parsea pero no se guarda movimiento.
+  const IngestResult.selfTest(ParseOutcome outcome)
+      : this._(IngestStatus.selfTest, selfTestOutcome: outcome);
+
   final IngestStatus status;
   final Transaction? transaction;
   final String? reason;
+  final ParseOutcome? selfTestOutcome;
 
   bool get isNewTransaction => status == IngestStatus.ingested;
 }
@@ -74,6 +80,12 @@ class IngestNotificationUseCase {
 
   Future<IngestResult> _process(RawNotification raw) async {
     final outcome = registry.parse(raw);
+    if (raw.isSelfTest) {
+      await rawNotifications.markProcessed(raw.id,
+          status: 'selftest',
+          reason: outcome.isTransaction ? 'ok' : outcome.ignoreReason);
+      return IngestResult.selfTest(outcome);
+    }
     if (!outcome.isTransaction) {
       final reason = outcome.ignoreReason ?? 'desconocido';
       await rawNotifications.markProcessed(raw.id,

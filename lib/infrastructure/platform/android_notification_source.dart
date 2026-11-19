@@ -14,12 +14,35 @@ class SeenPackage {
     required this.label,
     required this.count,
     required this.lastSeen,
+    this.allowedNatively = false,
   });
 
   final String package;
   final String label;
   final int count;
   final DateTime lastSeen;
+
+  /// El servicio nativo la está escuchando (activada o detectada como banco).
+  final bool allowedNatively;
+
+  bool get looksLikeBank => BankDetector.looksLikeBank(package, label);
+}
+
+class DeviceInfo {
+  const DeviceInfo({
+    required this.manufacturer,
+    required this.model,
+    required this.sdk,
+    required this.release,
+  });
+
+  final String manufacturer;
+  final String model;
+  final int sdk;
+  final String release;
+
+  @override
+  String toString() => '$manufacturer $model · Android $release (API $sdk)';
 }
 
 /// Estado del servicio nativo de escucha.
@@ -114,6 +137,26 @@ class AndroidNotificationSource implements NotificationSource {
   }) =>
       _call('showCaptureNotification', {'title': title, 'body': body});
 
+  /// Publica la notificación de autoprueba. `false` si no hay permiso de avisos.
+  Future<bool> postSelfTest() => _bool('postSelfTest');
+
+  Future<DeviceInfo?> deviceInfo() async {
+    try {
+      final m = await _methods.invokeMapMethod<String, dynamic>('deviceInfo');
+      if (m == null) return null;
+      return DeviceInfo(
+        manufacturer: '${m['manufacturer'] ?? ''}',
+        model: '${m['model'] ?? ''}',
+        sdk: (m['sdk'] as num?)?.toInt() ?? 0,
+        release: '${m['release'] ?? ''}',
+      );
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   @override
   Stream<RawNotification> get stream => _controller.stream;
 
@@ -150,6 +193,9 @@ class AndroidNotificationSource implements NotificationSource {
   Future<void> setAllowedPackages(Iterable<String> packages) =>
       _call('setAllowedPackages', {'packages': packages.toList()});
 
+  Future<void> setDisabledPackages(Iterable<String> packages) =>
+      _call('setDisabledPackages', {'packages': packages.toList()});
+
   Future<List<SeenPackage>> seenPackages() async {
     try {
       final list = await _methods.invokeListMethod<dynamic>('getSeenPackages');
@@ -162,6 +208,7 @@ class AndroidNotificationSource implements NotificationSource {
               count: (raw['count'] as num?)?.toInt() ?? 0,
               lastSeen: DateTime.fromMillisecondsSinceEpoch(
                   (raw['lastSeen'] as num?)?.toInt() ?? 0),
+              allowedNatively: raw['allowed'] == true,
             ),
       ];
     } on MissingPluginException {

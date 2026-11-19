@@ -8,13 +8,15 @@ import java.util.UUID
 
 /**
  * Recibe todas las notificaciones del sistema, filtra las de las apps permitidas
- * (bancos, SMS) y las guarda en un buffer SQLite local.
+ * (bancos, SMS, apps que parecen bancarias) y las guarda en un buffer SQLite local.
  *
  * El servicio vive aunque la app esté cerrada: Android lo enlaza mientras el usuario
  * mantenga el permiso de "Acceso a notificaciones". Al conectarse (o cuando Flutter lo
  * pide) también revisa las notificaciones que siguen en la bandeja, por si el sistema
  * lo suspendió mientras llegaban (One UI de Samsung lo hace con apps "en reposo").
- * Nada sale del teléfono.
+ *
+ * También acepta la notificación de autoprueba que publica Finaid ("Probar captura"),
+ * para verificar el camino completo sin hacer un pago real. Nada sale del teléfono.
  */
 class FinaidNotificationListenerService : NotificationListenerService() {
 
@@ -69,16 +71,23 @@ class FinaidNotificationListenerService : NotificationListenerService() {
     /** @return true si la notificación entró al buffer (era nueva y de una app permitida). */
     private fun handle(sbn: StatusBarNotification): Boolean {
         val pkg = sbn.packageName ?: return false
-        if (pkg == packageName) return false
         val notification = sbn.notification ?: return false
+        val extras = notification.extras ?: return false
+
+        val isSelfTest = pkg == packageName && extras.getBoolean(SelfTest.EXTRA, false)
+        if (pkg == packageName && !isSelfTest) return false
         if (sbn.isOngoing) return false
         if (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return false
 
         val store = NotificationStore.get(applicationContext)
-        store.recordSeen(pkg, sbn.postTime)
-        if (!store.isAllowed(pkg)) return false
+        if (!isSelfTest) {
+            store.recordSeen(pkg, sbn.postTime)
+            if (!store.isAllowed(pkg)) {
+                Log.d(TAG, "Ignorada: $pkg no está entre las fuentes")
+                return false
+            }
+        }
 
-        val extras = notification.extras ?: return false
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim()
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
@@ -90,16 +99,18 @@ class FinaidNotificationListenerService : NotificationListenerService() {
             .filter { it.isNotEmpty() }
             .maxByOrNull { it.length } ?: return false
 
-        val dedupeKey = "$pkg|${sbn.id}|${sbn.postTime}|${body.hashCode()}"
+        val source = if (isSelfTest) SelfTest.SOURCE_PACKAGE else pkg
+        val dedupeKey = "$source|${sbn.id}|${sbn.postTime}|${body.hashCode()}"
         val pending = PendingNotification(
             id = UUID.randomUUID().toString(),
-            packageName = pkg,
+            packageName = source,
             title = title,
             text = body,
             postedAt = sbn.postTime,
             dedupeKey = dedupeKey,
         )
         if (!store.insert(pending)) return false
+        Log.i(TAG, "Capturada notificación de $source")
 
         if (NotificationEventBus.hasListener) {
             NotificationEventBus.emit(pending)
@@ -118,4 +129,12 @@ class FinaidNotificationListenerService : NotificationListenerService() {
 
         val isConnected: Boolean get() = instance != null
     }
+}
+
+/** Autoprueba de captura: una notificación de Finaid que el listener acepta. */
+object SelfTest {
+    const val EXTRA = "co.finaid.SELF_TEST"
+
+    /** Package lógico con el que la autoprueba llega a Dart. */
+    const val SOURCE_PACKAGE = "co.finaid.selftest"
 }

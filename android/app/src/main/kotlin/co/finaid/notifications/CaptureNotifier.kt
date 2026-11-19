@@ -8,12 +8,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import co.finaid.R
 
-/** Aviso propio de Finaid cuando registra un movimiento. */
+/** Avisos propios de Finaid: movimiento registrado y autoprueba de captura. */
 object CaptureNotifier {
 
     private const val CHANNEL_ID = "finaid_captures"
+    private const val SELF_TEST_ID = 0x5E1F
 
     fun hasPermission(context: Context): Boolean =
         Build.VERSION.SDK_INT < 33 ||
@@ -31,11 +33,8 @@ object CaptureNotifier {
         manager.createNotificationChannel(channel)
     }
 
-    fun show(context: Context, title: String, body: String) {
-        if (!hasPermission(context)) return
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private fun builder(context: Context, manager: NotificationManager): Notification.Builder {
         ensureChannel(manager)
-
         val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pending = if (launch == null) null else PendingIntent.getActivity(
@@ -43,19 +42,46 @@ object CaptureNotifier {
         )
 
         @Suppress("DEPRECATION")
-        val builder = if (Build.VERSION.SDK_INT >= 26) {
+        val b = if (Build.VERSION.SDK_INT >= 26) {
             Notification.Builder(context, CHANNEL_ID)
         } else {
             Notification.Builder(context).setPriority(Notification.PRIORITY_DEFAULT)
         }
-        builder.setSmallIcon(R.drawable.ic_stat_finaid)
+        b.setSmallIcon(R.drawable.ic_stat_finaid)
+            .setColor(0xFF0E7C6B.toInt())
+            .setAutoCancel(true)
+        if (pending != null) b.setContentIntent(pending)
+        return b
+    }
+
+    fun show(context: Context, title: String, body: String) {
+        if (!hasPermission(context)) return
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = builder(context, manager)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(Notification.BigTextStyle().bigText(body))
-            .setAutoCancel(true)
-        if (pending != null) builder.setContentIntent(pending)
-
+            .build()
         val id = (System.currentTimeMillis() and 0x7fffffff).toInt()
-        manager.notify(id, builder.build())
+        manager.notify(id, notification)
+    }
+
+    /**
+     * Publica la notificación de autoprueba. El listener la reconoce por el extra
+     * [SelfTest.EXTRA] y la procesa como si viniera de un banco.
+     * @return false si no hay permiso para publicar notificaciones.
+     */
+    fun showSelfTest(context: Context): Boolean {
+        if (!hasPermission(context)) return false
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val body = "Compraste \$1.000 en PRUEBA FINAID con tu tarjeta *0000."
+        val b = builder(context, manager)
+            .setContentTitle("Finaid · prueba de captura")
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+            .addExtras(Bundle().apply { putBoolean(SelfTest.EXTRA, true) })
+        if (Build.VERSION.SDK_INT >= 26) b.setTimeoutAfter(15_000)
+        manager.notify(SELF_TEST_ID, b.build())
+        return true
     }
 }

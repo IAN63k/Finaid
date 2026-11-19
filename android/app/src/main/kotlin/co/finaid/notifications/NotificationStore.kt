@@ -2,8 +2,10 @@ package co.finaid.notifications
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import java.util.concurrent.ConcurrentHashMap
 
 data class PendingNotification(
     val id: String,
@@ -25,15 +27,16 @@ data class PendingNotification(
 
 /**
  * Buffer nativo de notificaciones pendientes, memoria de claves ya vistas (para no
- * re-entregar lo que sigue en la bandeja), apps detectadas y lista de packages
- * permitidos. Flutter lo drena cuando la app abre, vuelve a primer plano o desde el
- * motor en segundo plano.
+ * re-entregar lo que sigue en la bandeja), apps detectadas y listas de packages
+ * permitidos / desactivados por el usuario. Flutter lo drena cuando la app abre,
+ * vuelve a primer plano o desde el motor en segundo plano.
  */
 class NotificationStore private constructor(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DB_NAME, null, DB_VERSION) {
 
-    private val prefs = context.applicationContext
-        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val labelCache = ConcurrentHashMap<String, String>()
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -174,16 +177,31 @@ class NotificationStore private constructor(context: Context) :
             val countIdx = c.getColumnIndexOrThrow("count")
             val lastIdx = c.getColumnIndexOrThrow("last_seen")
             while (c.moveToNext()) {
+                val pkg = c.getString(pkgIdx)
                 out.add(
                     mapOf(
-                        "package" to c.getString(pkgIdx),
+                        "package" to pkg,
+                        "label" to appLabel(pkg),
                         "count" to c.getInt(countIdx),
                         "lastSeen" to c.getLong(lastIdx),
+                        "allowed" to isAllowed(pkg),
                     )
                 )
             }
         }
         return out
+    }
+
+    /** Nombre visible de la app (cacheado). */
+    fun appLabel(pkg: String): String = labelCache.getOrPut(pkg) {
+        try {
+            val pm = appContext.packageManager
+            pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+        } catch (e: PackageManager.NameNotFoundException) {
+            pkg
+        } catch (e: Exception) {
+            pkg
+        }
     }
 
     fun allowedPackages(): Set<String> =
@@ -193,13 +211,30 @@ class NotificationStore private constructor(context: Context) :
         prefs.edit().putStringSet(KEY_ALLOWED, HashSet(packages)).apply()
     }
 
-    fun isAllowed(pkg: String): Boolean = allowedPackages().contains(pkg)
+    /** Packages que el usuario desactivó explícitamente (ganan sobre la detección). */
+    fun disabledPackages(): Set<String> =
+        prefs.getStringSet(KEY_DISABLED, null) ?: emptySet()
+
+    fun setDisabledPackages(packages: Set<String>) {
+        prefs.edit().putStringSet(KEY_DISABLED, HashSet(packages)).apply()
+    }
+
+    /**
+     * Se escucha una app si el usuario la activó, o si parece una app bancaria y
+     * el usuario no la desactivó.
+     */
+    fun isAllowed(pkg: String): Boolean {
+        if (allowedPackages().contains(pkg)) return true
+        if (disabledPackages().contains(pkg)) return false
+        return BankDetector.looksLikeBank(pkg, appLabel(pkg))
+    }
 
     companion object {
         private const val DB_NAME = "finaid_native.db"
         private const val DB_VERSION = 2
         private const val PREFS_NAME = "finaid_native"
         private const val KEY_ALLOWED = "allowed_packages"
+        private const val KEY_DISABLED = "disabled_packages"
         private const val SEEN_KEYS_TTL_MS = 14L * 24 * 60 * 60 * 1000
 
         @Volatile

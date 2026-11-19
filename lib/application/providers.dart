@@ -106,6 +106,7 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
     onResumed: () {
       ref.invalidate(permissionStatusProvider);
       ref.invalidate(listenerStatusProvider);
+      ref.read(settingsProvider.notifier).autoEnableDetectedBanks();
     },
     notifyCapture: android == null
         ? null
@@ -153,14 +154,49 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> completeOnboarding() =>
       _update(state.copyWith(onboardingDone: true));
 
+  /// Guarda los ajustes tal como se cargaron (persiste la migración de
+  /// packages nuevos) y los envía al servicio nativo.
+  Future<void> completeLoadSync() => _update(state);
+
   Future<void> setPackageEnabled(String package, bool enabled) {
     final next = Set<String>.of(state.enabledPackages);
+    final disabled = Set<String>.of(state.disabledPackages);
     if (enabled) {
       next.add(package);
+      disabled.remove(package);
     } else {
       next.remove(package);
+      disabled.add(package);
     }
-    return _update(state.copyWith(enabledPackages: next));
+    return _update(
+        state.copyWith(enabledPackages: next, disabledPackages: disabled));
+  }
+
+  /// Activa las apps que han notificado y parecen bancarias (por package o
+  /// nombre), salvo las que el usuario desactivó. Devuelve las activadas.
+  Future<List<SeenPackage>> autoEnableDetectedBanks() async {
+    final android = ref.read(androidSourceProvider);
+    if (android == null) return const [];
+    final List<SeenPackage> seen;
+    try {
+      seen = await android.seenPackages();
+    } catch (_) {
+      return const [];
+    }
+    final added = [
+      for (final s in seen)
+        if (s.looksLikeBank &&
+            !state.enabledPackages.contains(s.package) &&
+            !state.disabledPackages.contains(s.package))
+          s,
+    ];
+    if (added.isNotEmpty) {
+      await _update(state.copyWith(enabledPackages: {
+        ...state.enabledPackages,
+        ...added.map((s) => s.package),
+      }));
+    }
+    return added;
   }
 
   Future<void> setNotifyCaptures(bool enabled) =>
@@ -178,6 +214,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     if (android == null) return;
     try {
       await android.setAllowedPackages(state.enabledPackages);
+      await android.setDisabledPackages(state.disabledPackages);
     } catch (_) {
       // El canal puede no estar listo en tests o en otras plataformas.
     }

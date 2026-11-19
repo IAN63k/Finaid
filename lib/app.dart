@@ -18,9 +18,12 @@ class _FinaidAppState extends ConsumerState<FinaidApp> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(settingsProvider.notifier).pushToPlatform();
-      ref.read(ingestionServiceProvider).start();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final settings = ref.read(settingsProvider.notifier);
+      // Persistir (incluye la migración de packages nuevos) y sincronizar.
+      await settings.completeLoadSync();
+      await settings.autoEnableDetectedBanks();
+      await ref.read(ingestionServiceProvider).start();
     });
   }
 

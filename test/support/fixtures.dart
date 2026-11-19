@@ -82,7 +82,12 @@ class Samples {
   static const daviviendaFactura =
       'Davivienda: Pago de factura CLARO por \$89.900 realizado exitosamente desde tu cuenta *9876 el 10/11/2026 a las 09:12.';
 
-  static const bbvaPackage = 'com.bbva.nxt_colombia';
+  static const bbvaPackage = 'co.com.bbva.mb';
+
+  /// Formato real capturado en un Galaxy S26 Ultra (2026-11-17).
+  static const bbvaCompraTitle = 'Compra Exitosa';
+  static const bbvaCompra =
+      'Hola, realizaste una compra por \$26,190.00 en Mp*agc tecnologia con tu tarjeta BBVA *2484. El 2026-11-17 a las 00:39.';
   static const bbvaLlaveTitle = 'Tu envío con llave fue exitoso';
   static const bbvaLlave =
       '2026/11/14 17:02 ROBIN IBARRA HURTADO recibió el valor de \$ 17.000,00 que enviaste a su llave *****4032 registrada en Nequi. Si no reconoces la operación, comunícate al 01 8000 912 227.';

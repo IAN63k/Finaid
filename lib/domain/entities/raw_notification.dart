@@ -44,6 +44,11 @@ class RawNotification {
   /// Clave estable para no ingerir dos veces la misma notificación.
   final String? dedupeKey;
 
+  /// Package lógico de la autoprueba de captura (ver `SelfTest` en Kotlin).
+  static const String selfTestPackage = 'co.finaid.selftest';
+
+  bool get isSelfTest => sourcePackage == selfTestPackage;
+
   /// Título + cuerpo: es lo que miran los parsers.
   String get fullText {
     final t = title?.trim() ?? '';
