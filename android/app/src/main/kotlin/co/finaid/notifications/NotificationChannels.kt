@@ -44,6 +44,13 @@ object NotificationChannels {
                     NotificationAccess.openBatterySettings(activityProvider() ?: appContext)
                     result.success(null)
                 }
+                "openAppDetails" -> {
+                    NotificationAccess.openAppDetails(activityProvider() ?: appContext)
+                    result.success(null)
+                }
+                "openAutostartSettings" -> result.success(
+                    NotificationAccess.openAutostartSettings(activityProvider() ?: appContext)
+                )
                 "requestRebind" -> {
                     NotificationAccess.requestRebind(appContext)
                     result.success(null)

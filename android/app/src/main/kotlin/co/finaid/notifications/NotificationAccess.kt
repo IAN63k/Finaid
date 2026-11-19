@@ -59,4 +59,50 @@ object NotificationAccess {
             )
         }
     }
+
+    /** Ficha de la app en Ajustes (para "Permitir ajustes restringidos", batería, etc.). */
+    fun openAppDetails(context: Context) {
+        context.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.parse("package:${context.packageName}"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
+
+    /**
+     * Pantallas de "Inicio automático" / "Apps protegidas" de cada fabricante.
+     * Cambian entre versiones, así que se prueban en orden; si ninguna existe
+     * se abre la ficha de la app.
+     */
+    private val AUTOSTART_SCREENS = listOf(
+        // Xiaomi / Redmi / POCO (MIUI, HyperOS)
+        ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+        // Huawei / Honor
+        ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+        ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+        ComponentName("com.hihonor.systemmanager", "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+        // OPPO / realme / OnePlus (ColorOS)
+        ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+        ComponentName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"),
+        ComponentName("com.oplus.safecenter", "com.oplus.safecenter.permission.startup.StartupAppListActivity"),
+        ComponentName("com.oneplus.security", "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity"),
+        // vivo / iQOO
+        ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+        ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity"),
+    )
+
+    /** @return true si se abrió la pantalla del fabricante; false si se abrió la ficha de la app. */
+    fun openAutostartSettings(context: Context): Boolean {
+        for (component in AUTOSTART_SCREENS) {
+            val intent = Intent().setComponent(component).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                context.startActivity(intent)
+                return true
+            } catch (_: Exception) {
+                // No existe en este teléfono o no está exportada: probar la siguiente.
+            }
+        }
+        openAppDetails(context)
+        return false
+    }
 }
