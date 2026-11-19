@@ -7,6 +7,16 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-19
+
+### Corregido
+
+- Activar el bloqueo decía "No se confirmó": faltaba declarar el permiso
+  `USE_BIOMETRIC`, y Android rechazaba la autenticación antes de mostrar la huella. Es un
+  permiso normal (se concede al instalar, sin preguntar).
+- Los fallos de autenticación quedan en el log (`FinaidAuth`) y `tool/android_diag.ps1`
+  los incluye.
+
 ## [0.7.1] - 2026-11-19
 
 Primera versión instalable con todo lo de 0.7.0.
@@ -238,7 +248,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/IAN63k/Finaid/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/IAN63k/Finaid/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/IAN63k/Finaid/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/IAN63k/Finaid/compare/v0.5.1...v0.6.0
