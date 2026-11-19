@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
@@ -7,6 +6,7 @@ import '../../core/utils/date_utils.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/money_input_formatter.dart';
 
 Future<void> showManualTransactionSheet(BuildContext context,
     {bool income = false}) {
@@ -68,7 +68,7 @@ class _ManualTransactionSheetState extends ConsumerState<ManualTransactionSheet>
   }
 
   Future<void> _save() async {
-    final pesos = int.tryParse(_amount.text.replaceAll(RegExp(r'[^\d]'), ''));
+    final pesos = MoneyInputFormatter.parse(_amount.text);
     final description = _description.text.trim();
     if (pesos == null || pesos <= 0) {
       setState(() => _error = 'Escribe un monto mayor que cero.');
@@ -138,7 +138,7 @@ class _ManualTransactionSheetState extends ConsumerState<ManualTransactionSheet>
             controller: _amount,
             autofocus: true,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            inputFormatters: const [MoneyInputFormatter()],
             decoration: const InputDecoration(
                 prefixText: '\$ ', labelText: 'Monto en pesos'),
           ),

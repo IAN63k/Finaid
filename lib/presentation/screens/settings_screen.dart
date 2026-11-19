@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
@@ -12,6 +11,7 @@ import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../infrastructure/platform/android_notification_source.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/money_input_formatter.dart';
 import 'capture_log_screen.dart';
 import 'capture_tools.dart';
 import 'detected_apps_screen.dart';
@@ -307,7 +307,7 @@ class SettingsScreen extends ConsumerWidget {
   Future<int?> _askPesos(BuildContext context,
       {required String title, required String label, int? current}) {
     final controller = TextEditingController(
-        text: current == null ? '' : (current ~/ 100).toString());
+        text: MoneyInputFormatter.fromPesos(current == null ? null : current ~/ 100));
     return showDialog<int?>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -316,7 +316,7 @@ class SettingsScreen extends ConsumerWidget {
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: const [MoneyInputFormatter()],
           decoration: InputDecoration(prefixText: '\$ ', labelText: label),
         ),
         actions: [
@@ -328,7 +328,7 @@ class SettingsScreen extends ConsumerWidget {
               onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           FilledButton(
             onPressed: () {
-              final pesos = int.tryParse(controller.text.trim()) ?? 0;
+              final pesos = MoneyInputFormatter.parse(controller.text) ?? 0;
               Navigator.pop(ctx, pesos * 100);
             },
             child: const Text('Guardar'),
