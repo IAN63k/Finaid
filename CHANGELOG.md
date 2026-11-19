@@ -7,6 +7,24 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-19
+
+### Añadido
+
+- **Respaldo**: Ajustes → Tus datos → Respaldo y exportación. Un archivo `.json` con
+  movimientos, reglas por comercio, presupuestos, ajustes y notificaciones recibidas.
+  Opcionalmente cifrado con contraseña (AES-256-GCM, clave derivada con
+  PBKDF2-HMAC-SHA256 de 100.000 iteraciones). Se guarda donde el usuario elija (Drive,
+  Descargas, computador) con el selector de archivos de Android, sin pedir permisos de
+  almacenamiento.
+- **Restaurar**: combina el respaldo con los datos actuales; restaurar dos veces no
+  duplica. En conflictos de ajustes y presupuestos gana lo que ya está en el teléfono.
+  Detecta contraseña incorrecta, archivos alterados y respaldos de versiones futuras.
+- **Exportar a Excel (CSV)**: del mes seleccionado o de todo; separador `;`, BOM UTF-8,
+  gastos en negativo y protección contra inyección de fórmulas.
+- Recordatorio en Consejos cuando hay 15 o más movimientos y no hay respaldo, o el último
+  tiene más de 30 días.
+
 ## [0.4.0] - 2026-11-19
 
 ### Añadido
@@ -160,7 +178,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/IAN63k/Finaid/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IAN63k/Finaid/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/IAN63k/Finaid/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/IAN63k/Finaid/compare/v0.3.0...v0.3.1
