@@ -48,7 +48,7 @@ class SpanishBankParser implements BankParser {
 
     final noise = NoiseFilter.reason(norm, hasVerb: hasVerb);
     if (noise == 'rechazada') {
-      return ParseOutcome.ignored(noise,
+      return ParseOutcome.ignored('rechazada',
           rejected: _rejectedDetails(original, notification, detected.kind));
     }
     if (noise != null) return ParseOutcome.ignored(noise);
