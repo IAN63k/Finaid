@@ -25,12 +25,18 @@ class ParsedTransaction {
 
 class ParseOutcome {
   const ParseOutcome.transaction(ParsedTransaction this.transaction)
-      : ignoreReason = null;
+      : ignoreReason = null,
+        rejected = null;
 
-  const ParseOutcome.ignored(String this.ignoreReason) : transaction = null;
+  const ParseOutcome.ignored(String this.ignoreReason, {this.rejected})
+      : transaction = null;
 
   final ParsedTransaction? transaction;
   final String? ignoreReason;
+
+  /// Para compras rechazadas o no exitosas: lo que se pudo leer (monto,
+  /// comercio, tarjeta), para revisar si ya había una compra registrada igual.
+  final ParsedTransaction? rejected;
 
   bool get isTransaction => transaction != null;
 }

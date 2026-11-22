@@ -74,6 +74,10 @@ class EditTransactionUseCases {
     ));
   }
 
+  /// El usuario revisó el movimiento y está bien: deja de pedir revisión.
+  Future<void> markReviewed(Transaction transaction) =>
+      transactions.save(transaction.copyWith(confidence: 1.0));
+
   Future<void> deleteTransaction(Transaction transaction) =>
       transactions.delete(transaction.id);
 

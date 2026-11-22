@@ -70,10 +70,10 @@ class BudgetEvaluator {
     for (final t in all) {
       if (t.id == transaction.id) included = true;
       final current = t.id == transaction.id ? transaction : t;
-      if (current.countsAsExpense &&
-          current.categoryId == transaction.categoryId &&
+      if (current.categoryId == transaction.categoryId &&
           Dates.sameMonth(current.occurredAt, transaction.occurredAt)) {
-        spent += current.amountMinor;
+        // Las devoluciones de la categoría restan.
+        spent += current.expenseImpactMinor;
       }
     }
     if (!included) spent += transaction.amountMinor;

@@ -47,6 +47,10 @@ class SpanishBankParser implements BankParser {
     final hasVerb = detected.kind != TransactionKind.unknown;
 
     final noise = NoiseFilter.reason(norm, hasVerb: hasVerb);
+    if (noise == 'rechazada') {
+      return ParseOutcome.ignored(noise,
+          rejected: _rejectedDetails(original, notification, detected.kind));
+    }
     if (noise != null) return ParseOutcome.ignored(noise);
 
     final plain = TextTools.removeDiacritics(original);
@@ -90,5 +94,33 @@ class SpanishBankParser implements BankParser {
       confidence: confidence.clamp(0.0, 1.0).toDouble(),
       accountHint: hint,
     ));
+  }
+
+  /// Lo que se puede leer de una compra rechazada o no exitosa ("tu compra
+  /// en X no fue exitosa... Valor: $44.300"), para cruzarla con una compra
+  /// ya registrada. `null` si no trae monto.
+  ParsedTransaction? _rejectedDetails(
+      String original, RawNotification notification, TransactionKind kind) {
+    final plain = TextTools.removeDiacritics(original);
+    final money = MoneyParser.parseFirst(original);
+    if (money == null) return null;
+    final rejectedKind = kind.isExpense ? kind : TransactionKind.purchase;
+    return ParsedTransaction(
+      amountMinor: money.amountMinor,
+      currency: money.currency,
+      kind: rejectedKind,
+      merchantRaw:
+          CounterpartyExtractor.extract(plain, rejectedKind, from: money.end) ??
+              '',
+      bankId: bank.id == KnownBanks.unknown.id
+          ? (KnownBanks.bySignature(TextTools.normalize(original)) ??
+                  KnownBanks.unknown)
+              .id
+          : bank.id,
+      occurredAt:
+          DateTimeExtractor.extract(original, fallback: notification.postedAt),
+      confidence: 0,
+      accountHint: AccountHintExtractor.extract(original),
+    );
   }
 }

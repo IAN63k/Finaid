@@ -19,13 +19,17 @@ extension TransactionKindX on TransactionKind {
         _ => false,
       };
 
+  /// Dinero que entra y cuenta como ingreso. Las devoluciones no: restan del
+  /// gasto de su categoría (ver [Transaction.expenseImpactMinor]).
   bool get isIncome => switch (this) {
-        TransactionKind.transferIn ||
-        TransactionKind.deposit ||
-        TransactionKind.refund =>
-          true,
+        TransactionKind.transferIn || TransactionKind.deposit => true,
         _ => false,
       };
+
+  bool get isRefund => this == TransactionKind.refund;
+
+  /// Entra dinero (ingreso o devolución).
+  bool get isInflow => isIncome || isRefund;
 
   String get label => switch (this) {
         TransactionKind.purchase => 'Compra',
@@ -34,7 +38,7 @@ extension TransactionKindX on TransactionKind {
         TransactionKind.withdrawal => 'Retiro',
         TransactionKind.transferIn => 'Transferencia recibida',
         TransactionKind.deposit => 'Ingreso',
-        TransactionKind.refund => 'Reembolso',
+        TransactionKind.refund => 'Devolución',
         TransactionKind.unknown => 'Sin clasificar',
       };
 
@@ -92,6 +96,16 @@ class Transaction {
 
   bool get countsAsExpense => !ignored && kind.isExpense;
   bool get countsAsIncome => !ignored && kind.isIncome;
+
+  /// Devolución o reverso de una compra: resta del gasto, no suma ingreso.
+  bool get countsAsRefund => !ignored && kind.isRefund;
+
+  /// Efecto sobre el gasto: positivo para gastos, negativo para devoluciones.
+  int get expenseImpactMinor => countsAsExpense
+      ? amountMinor
+      : countsAsRefund
+          ? -amountMinor
+          : 0;
   bool get needsReview =>
       !ignored && (kind == TransactionKind.unknown || confidence < 0.6);
 

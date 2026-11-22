@@ -28,11 +28,12 @@ class MonthSummary {
     var review = 0;
     final byCategory = <String, int>{};
     for (final t in inMonth) {
-      if (t.countsAsExpense) {
-        expenses += t.amountMinor;
-        expenseCount++;
-        byCategory.update(t.categoryId, (v) => v + t.amountMinor,
-            ifAbsent: () => t.amountMinor);
+      if (t.countsAsExpense || t.countsAsRefund) {
+        // Las devoluciones restan del gasto de su categoría.
+        final impact = t.expenseImpactMinor;
+        expenses += impact;
+        if (t.countsAsExpense) expenseCount++;
+        byCategory.update(t.categoryId, (v) => v + impact, ifAbsent: () => impact);
       } else if (t.countsAsIncome) {
         income += t.amountMinor;
       }
@@ -65,7 +66,8 @@ class MonthSummary {
   int get movementCount => transactions.where((t) => !t.ignored).length;
 
   List<MapEntry<String, int>> get categoriesSorted =>
-      byCategory.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      byCategory.entries.where((e) => e.value > 0).toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
 
   double shareOf(String categoryId) =>
       expensesMinor == 0 ? 0 : (byCategory[categoryId] ?? 0) / expensesMinor;

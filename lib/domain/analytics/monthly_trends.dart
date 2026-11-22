@@ -74,11 +74,13 @@ class MonthlyTrends {
       if (t.ignored) continue;
       if (categoryId != null && t.categoryId != categoryId) continue;
       final m = Dates.monthStart(t.occurredAt);
-      if (t.countsAsExpense) {
-        if (firstData == null || m.isBefore(firstData)) firstData = m;
+      if (t.countsAsExpense || t.countsAsRefund) {
+        if (t.countsAsExpense && (firstData == null || m.isBefore(firstData))) {
+          firstData = m;
+        }
         if (m.isBefore(first) || m.isAfter(current)) continue;
-        expenses[m] = (expenses[m] ?? 0) + t.amountMinor;
-        counts[m] = (counts[m] ?? 0) + 1;
+        expenses[m] = (expenses[m] ?? 0) + t.expenseImpactMinor;
+        if (t.countsAsExpense) counts[m] = (counts[m] ?? 0) + 1;
       } else if (t.countsAsIncome) {
         if (m.isBefore(first) || m.isAfter(current)) continue;
         income[m] = (income[m] ?? 0) + t.amountMinor;
@@ -163,16 +165,16 @@ class CategoryChange {
     final monthsWithData = <DateTime>{};
 
     for (final t in transactions) {
-      if (!t.countsAsExpense) continue;
+      if (!t.countsAsExpense && !t.countsAsRefund) continue;
+      final impact = t.expenseImpactMinor;
       final m = Dates.monthStart(t.occurredAt);
       if (Dates.sameMonth(m, current)) {
-        currentByCat[t.categoryId] =
-            (currentByCat[t.categoryId] ?? 0) + t.amountMinor;
+        currentByCat[t.categoryId] = (currentByCat[t.categoryId] ?? 0) + impact;
       } else if (previous.any((p) => Dates.sameMonth(p, m))) {
-        monthsWithData.add(m);
+        if (t.countsAsExpense) monthsWithData.add(m);
         if (t.occurredAt.day <= cutoffDay) {
           previousByCat[t.categoryId] =
-              (previousByCat[t.categoryId] ?? 0) + t.amountMinor;
+              (previousByCat[t.categoryId] ?? 0) + impact;
         }
       }
     }

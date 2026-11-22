@@ -16,11 +16,19 @@ class KindDetector {
 
   static const _refund = [
     'reembolso',
+    'reembolsamos',
     'devolucion',
+    'devolvimos',
+    'devuelto',
     'reversion',
     'reverso',
+    'reversado',
+    'reversamos',
     'te devolvimos',
     'reintegro',
+    'anulacion de compra',
+    'compra anulada',
+    'abono por devolucion',
   ];
   static const _income = [
     'recibiste',
@@ -169,6 +177,9 @@ class NoiseFilter {
     'fondos insuficientes',
     'sin fondos',
     'no exitos',
+    'no fue exitos',
+    'no se te debito',
+    'no se realizo',
   ];
   static const _reminder = [
     'recuerda pagar',
@@ -242,6 +253,7 @@ class CounterpartyExtractor {
     r'saldo\b|cupo\b|si\s+no\b|puedes\b|usando\b|mediante\b|via\b|'
     r'aprobad[ao]\b|exitos[ao]\b|realizad[ao]\b|terminada\b|fue\b|'
     r'registrad[ao]\b|que\s+enviaste\b|recibi[o]\b|'
+    r'no\s+(?:fue|se|pudo|paso)\b|'
     r'en\s+tu\b|a\s+tu\b|de\s+tu\b|en\s+la\s+cuenta\b|'
     r'\*|\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}:\d{2}|\$|cop\b)'
     r'|[,;:!?¿¡\n]|\.(?=\s|$)',

@@ -18,9 +18,14 @@ class InsightContext {
         .toList(growable: false);
     thisMonthExpenses =
         thisMonth.where((t) => t.countsAsExpense).toList(growable: false);
-    thisMonthIncome = sum(thisMonth.where((t) => t.countsAsIncome));
-    thisMonthSpend = sum(thisMonthExpenses);
-    thisMonthByCategory = byCategory(thisMonthExpenses);
+    thisMonthRefunds =
+        thisMonth.where((t) => t.countsAsRefund).toList(growable: false);
+    thisMonthIncome = thisMonth
+        .where((t) => t.countsAsIncome)
+        .fold(0, (acc, t) => acc + t.amountMinor);
+    // Gasto neto: las devoluciones restan.
+    thisMonthSpend = sum([...thisMonthExpenses, ...thisMonthRefunds]);
+    thisMonthByCategory = byCategory([...thisMonthExpenses, ...thisMonthRefunds]);
   }
 
   final DateTime now;
@@ -47,7 +52,9 @@ class InsightContext {
 
   late final DateTime monthStart;
   late final List<Transaction> thisMonth;
+  /// Gastos del mes (sin devoluciones), para reglas que cuentan compras.
   late final List<Transaction> thisMonthExpenses;
+  late final List<Transaction> thisMonthRefunds;
   late final int thisMonthSpend;
   late final int thisMonthIncome;
   late final Map<String, int> thisMonthByCategory;
@@ -60,7 +67,7 @@ class InsightContext {
     final end = Dates.nextMonthStart(month);
     return all
         .where((t) =>
-            t.countsAsExpense &&
+            (t.countsAsExpense || t.countsAsRefund) &&
             !t.occurredAt.isBefore(start) &&
             t.occurredAt.isBefore(end))
         .toList(growable: false);
@@ -73,14 +80,18 @@ class InsightContext {
         .toList(growable: false);
   }
 
+  /// Suma el efecto sobre el gasto: las devoluciones restan.
   int sum(Iterable<Transaction> txs) =>
-      txs.fold(0, (acc, t) => acc + t.amountMinor);
+      txs.fold(0, (acc, t) => acc + _impact(t));
+
+  static int _impact(Transaction t) =>
+      t.countsAsRefund ? -t.amountMinor : t.amountMinor;
 
   Map<String, int> byCategory(Iterable<Transaction> txs) {
     final map = <String, int>{};
     for (final t in txs) {
-      map.update(t.categoryId, (v) => v + t.amountMinor,
-          ifAbsent: () => t.amountMinor);
+      final v = _impact(t);
+      map.update(t.categoryId, (old) => old + v, ifAbsent: () => v);
     }
     return map;
   }
