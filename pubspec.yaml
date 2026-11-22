@@ -1,7 +1,7 @@
 name: finaid
 description: Finanzas personales automáticas a partir de las notificaciones de tus bancos. Todo se procesa en tu teléfono.
 publish_to: "none"
-version: 0.11.0+18
+version: 0.12.0+19
 
 environment:
   sdk: ^3.5.0

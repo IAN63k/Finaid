@@ -7,6 +7,29 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-22
+
+### Añadido
+
+- **Compras no exitosas**: cuando el banco avisa que una compra no fue exitosa
+  (BBVA "Compra No Exitosa", "rechazada", "no se te debitó"), Finaid busca la compra
+  con el mismo valor registrada en las 24 horas anteriores (mismo comercio o misma
+  tarjeta) y la marca para revisar. Llega un aviso "⚠️ ¿Te cobraron $X en Y?" y en el
+  detalle aparecen los botones *Sí, me cobraron* / *No, ignorarla*. No se borra nada
+  automáticamente: a veces el intento que falla es un reintento y el primero sí se
+  cobró.
+- Tipo **Devolución** en el detalle del movimiento.
+
+### Cambiado
+
+- **Las devoluciones ya no cuentan como ingreso**: restan del gasto de la categoría
+  de la compra original (resumen del mes, consejos, presupuestos y tendencias). Al
+  llegar, la devolución toma la categoría de la compra del mismo comercio de los
+  últimos 90 días. En la lista se muestran con "+" y el aviso dice "Devolución: …".
+- Más formas de detectar devoluciones ("devolvimos", "reversado", "compra anulada"…)
+  y compras fallidas ("no fue exitosa", "no se te debitó", "no se realizó").
+- El comercio de los avisos de compra no exitosa se lee sin el "no fue exitosa".
+
 ## [0.11.0] - 2026-11-19
 
 ### Añadido
@@ -326,7 +349,8 @@ Etiqueta creada pero el APK no llegó a publicarse (ver 0.1.1). Contenido funcio
 - Deep link `finaid://ingest` preparado para la ingesta en iOS (Atajos).
 - CI con análisis y tests; release automático del APK al etiquetar `v*`.
 
-[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/IAN63k/Finaid/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/IAN63k/Finaid/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/IAN63k/Finaid/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/IAN63k/Finaid/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/IAN63k/Finaid/compare/v0.8.0...v0.9.0
