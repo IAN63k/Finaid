@@ -35,10 +35,10 @@ class CaptureNotificationText {
       TransactionKind.transferOut =>
         'Enviaste $amount${merchant.isEmpty ? '' : ' a $merchant'}',
       TransactionKind.withdrawal => 'Retiro: $amount',
-      TransactionKind.transferIn ||
-      TransactionKind.deposit ||
-      TransactionKind.refund =>
+      TransactionKind.transferIn || TransactionKind.deposit =>
         'Ingreso: $amount${merchant.isEmpty ? '' : ' de $merchant'}',
+      TransactionKind.refund =>
+        'Devolución: $amount${merchant.isEmpty ? '' : ' de $merchant'}',
       TransactionKind.unknown => 'Movimiento: $amount',
     };
   }
@@ -93,7 +93,8 @@ class CaptureAlert {
   final String title;
   final String body;
 
-  /// Va por el canal de alertas de presupuesto (más visible).
+  /// Va por el canal de alertas (más visible): presupuesto o compra por
+  /// revisar.
   final bool isBudgetAlert;
 }
 
@@ -120,5 +121,22 @@ class CaptureAlerts {
     if (!notifyCaptures) return const [];
     final text = CaptureNotificationText.of(transaction, budget: b);
     return [CaptureAlert(title: text.title, body: text.body)];
+  }
+
+  /// El banco avisó que una compra no fue exitosa y ya había una igual
+  /// registrada: se pide confirmar si hubo cobro.
+  static CaptureAlert rejectedPurchase(Transaction flagged) {
+    final amount =
+        MoneyFormat.format(flagged.amountMinor, currency: flagged.currency);
+    final merchant = flagged.merchantRaw.isEmpty
+        ? ''
+        : TextTools.titleCase(TextTools.merchantKey(flagged.merchantRaw));
+    final bank = KnownBanks.byId(flagged.bankId).name;
+    return CaptureAlert(
+      title: '⚠️ ¿Te cobraron $amount${merchant.isEmpty ? '' : ' en $merchant'}?',
+      body: '$bank avisó que una compra por ese valor no fue exitosa. '
+          'La marqué para revisar: ábrela en Finaid y confirma si hubo cobro.',
+      isBudgetAlert: true,
+    );
   }
 }

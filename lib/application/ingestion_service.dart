@@ -18,6 +18,7 @@ class IngestionService with WidgetsBindingObserver {
     required this.onTransactionsChanged,
     this.onResumed,
     this.onNewTransaction,
+    this.onFlaggedTransaction,
   });
 
   final List<NotificationSource> sources;
@@ -28,6 +29,11 @@ class IngestionService with WidgetsBindingObserver {
   /// (para decidir entre aviso del sistema o alerta dentro de la app).
   final Future<void> Function(Transaction transaction, bool inForeground)?
       onNewTransaction;
+
+  /// Se llama cuando una compra ya registrada queda marcada para revisar
+  /// (el banco avisó que una compra igual no fue exitosa).
+  final Future<void> Function(Transaction transaction, bool inForeground)?
+      onFlaggedTransaction;
 
   final List<StreamSubscription<RawNotification>> _subscriptions = [];
   final List<NotificationSource> _active = [];
@@ -77,6 +83,14 @@ class IngestionService with WidgetsBindingObserver {
       final result = await ingest(notification);
       if (result.status == IngestStatus.selfTest) {
         _selfTests.add(result);
+        return false;
+      }
+      if (result.isFlagged) {
+        onTransactionsChanged();
+        final callback = onFlaggedTransaction;
+        if (callback != null) {
+          await callback(result.transaction!, _inForeground);
+        }
         return false;
       }
       if (result.isNewTransaction) {

@@ -242,7 +242,8 @@ class TransactionTile extends StatelessWidget {
     final merchant = t.merchantRaw.isEmpty
         ? t.kind.label
         : TextTools.titleCase(TextTools.merchantKey(t.merchantRaw));
-    final isIncome = t.kind.isIncome;
+    // Ingresos y devoluciones: entra dinero.
+    final isIncome = t.kind.isInflow;
     final amountColor = t.ignored
         ? scheme.outline
         : isIncome

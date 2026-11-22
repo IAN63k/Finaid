@@ -154,6 +154,20 @@ final ingestionServiceProvider = Provider<IngestionService>((ref) {
         }
       }
     },
+    onFlaggedTransaction: (transaction, inForeground) async {
+      final settings = ref.read(settingsProvider);
+      if (!settings.notifyCaptures && !settings.budgetAlerts) return;
+      final alert = CaptureAlerts.rejectedPurchase(transaction);
+      if (inForeground) {
+        ref.read(foregroundAlertProvider.notifier).show(alert);
+      } else if (notifier != null) {
+        await notifier.showCaptureNotification(
+            title: alert.title,
+            body: alert.body,
+            budget: true,
+            hideOnLockScreen: settings.lockEnabled);
+      }
+    },
   );
   ref.onDispose(service.dispose);
   return service;

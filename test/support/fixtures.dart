@@ -101,4 +101,15 @@ class Samples {
   static const nequiTeEnvioTitle = 'Envío';
   static const nequiTeEnvio = 'KAROL CASTANEDA te envió 50, ¡lo mejor!';
   static const nequiPagoSinSimbolo = 'Pagaste 12000 en TIENDA DONA ROSA.';
+
+  /// Compra exitosa y luego "no exitosa" del mismo valor (Galaxy S26 Ultra,
+  /// 2026-11-22).
+  static const bbvaCompraMercadoli =
+      'Hola, realizaste una compra por \$44,300.00 en Merpago*mercadoli con tu tarjeta BBVA *2484. El 2026-11-22 a las 11:14.';
+  static const bbvaNoExitosaTitle = 'Compra No Exitosa';
+  static const bbvaNoExitosa =
+      'Hola, tu compra en Merpago*mercadoli no fue exitosa y no se te debitó dinero. Tarjeta BBVA usada: *2484. Valor: \$44,300.00. El 2026-11-22 a las 11:29.';
+  static const devolucionMercadoli =
+      'Te devolvimos \$44.300 de tu compra en MERCADOLI con tu tarjeta *2484.';
 }
+

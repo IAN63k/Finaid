@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/text_tools.dart';
 import '../../domain/entities/bank.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/transaction.dart';
+import '../../domain/usecases/ingest_notification.dart';
 import '../widgets/common_widgets.dart';
 
 Future<void> showTransactionDetail(BuildContext context, Transaction t) {
@@ -19,7 +21,7 @@ Future<void> showTransactionDetail(BuildContext context, Transaction t) {
   );
 }
 
-enum _KindChoice { expense, income, ignore }
+enum _KindChoice { expense, income, refund, ignore }
 
 class TransactionDetailSheet extends ConsumerStatefulWidget {
   const TransactionDetailSheet({super.key, required this.transaction});
@@ -48,7 +50,9 @@ class _TransactionDetailSheetState
         ? _KindChoice.ignore
         : t.kind.isIncome
             ? _KindChoice.income
-            : _KindChoice.expense;
+            : t.kind.isRefund
+                ? _KindChoice.refund
+                : _KindChoice.expense;
   }
 
   Future<void> _save() async {
@@ -65,13 +69,13 @@ class _TransactionDetailSheetState
 
     if (!wantsIgnore) {
       final wantsIncome = _kindChoice == _KindChoice.income;
-      if (wantsIncome != current.kind.isIncome ||
-          current.kind == TransactionKind.unknown) {
-        final newKind = wantsIncome
-            ? (current.kind.isIncome ? current.kind : TransactionKind.deposit)
-            : (current.kind.isExpense
-                ? current.kind
-                : TransactionKind.purchase);
+      final newKind = switch (_kindChoice) {
+        _KindChoice.income =>
+          current.kind.isIncome ? current.kind : TransactionKind.deposit,
+        _KindChoice.refund => TransactionKind.refund,
+        _ => current.kind.isExpense ? current.kind : TransactionKind.purchase,
+      };
+      if (newKind != current.kind) {
         await edits.changeKind(current, newKind);
         current = current.copyWith(kind: newKind);
         if (wantsIncome) _categoryId = Categories.ingresos.id;
@@ -85,6 +89,27 @@ class _TransactionDetailSheetState
 
     await ref.read(transactionsProvider.notifier).reload();
     await ref.read(merchantRulesProvider.notifier).reload();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  bool get _hasRejectedNote =>
+      t.note?.startsWith(IngestNotificationUseCase.rejectedNotePrefix) ?? false;
+
+  /// "Sí me cobraron": la compra queda como estaba, sin pedir revisión.
+  Future<void> _confirmCharged() async {
+    setState(() => _saving = true);
+    await ref.read(editUseCasesProvider).markReviewed(t);
+    await ref.read(transactionsProvider.notifier).reload();
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  /// "No me cobraron": se ignora (no se borra, por si el banco cobra después).
+  Future<void> _markNotCharged() async {
+    setState(() => _saving = true);
+    await ref
+        .read(editUseCasesProvider)
+        .markReviewed(t.copyWith(ignored: true));
+    await ref.read(transactionsProvider.notifier).reload();
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -161,13 +186,27 @@ class _TransactionDetailSheetState
                   style: text.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
             ],
           ),
-          if (t.needsReview)
+          if (_hasRejectedNote)
+            _ReviewNote(
+              note: t.note!,
+              pending: t.needsReview,
+              onCharged: _saving ? null : _confirmCharged,
+              onNotCharged: _saving ? null : _markNotCharged,
+            )
+          else if (t.needsReview)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 'No estoy seguro de haber leído bien esta notificación. Revisa el tipo y la categoría.',
                 style: text.bodySmall?.copyWith(color: scheme.error),
               ),
+            )
+          else if (t.note != null && t.note!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(t.note!,
+                  style: text.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant)),
             ),
           const SizedBox(height: 20),
           Text('Tipo', style: text.labelLarge),
@@ -175,18 +214,11 @@ class _TransactionDetailSheetState
           SegmentedButton<_KindChoice>(
             showSelectedIcon: false,
             segments: const [
+              ButtonSegment(value: _KindChoice.expense, label: Text('Gasto')),
+              ButtonSegment(value: _KindChoice.income, label: Text('Ingreso')),
               ButtonSegment(
-                  value: _KindChoice.expense,
-                  label: Text('Gasto'),
-                  icon: Icon(Icons.arrow_upward, size: 16)),
-              ButtonSegment(
-                  value: _KindChoice.income,
-                  label: Text('Ingreso'),
-                  icon: Icon(Icons.arrow_downward, size: 16)),
-              ButtonSegment(
-                  value: _KindChoice.ignore,
-                  label: Text('Ignorar'),
-                  icon: Icon(Icons.visibility_off_outlined, size: 16)),
+                  value: _KindChoice.refund, label: Text('Devolución')),
+              ButtonSegment(value: _KindChoice.ignore, label: Text('Ignorar')),
             ],
             selected: {_kindChoice},
             onSelectionChanged: (s) => setState(() {
@@ -198,6 +230,15 @@ class _TransactionDetailSheetState
               }
             }),
           ),
+          if (_kindChoice == _KindChoice.refund)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Una devolución no cuenta como ingreso: resta del gasto de su categoría. Elige la categoría de la compra que te devolvieron.',
+                style:
+                    text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ),
           if (_kindChoice == _KindChoice.ignore)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -300,6 +341,69 @@ class _RawNotificationBox extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Aviso de compra posiblemente no exitosa, con la confirmación del usuario.
+class _ReviewNote extends StatelessWidget {
+  const _ReviewNote({
+    required this.note,
+    required this.pending,
+    required this.onCharged,
+    required this.onNotCharged,
+  });
+
+  final String note;
+  final bool pending;
+  final VoidCallback? onCharged;
+  final VoidCallback? onNotCharged;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final warning = AppTheme.warning(context);
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: warning.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.warning_amber_rounded, color: warning, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(note, style: text.bodyMedium)),
+            ],
+          ),
+          if (pending) ...[
+            const SizedBox(height: 8),
+            Text('¿Te cobraron esta compra? Revisa tu app del banco.',
+                style: text.bodySmall),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonal(
+                  onPressed: onCharged,
+                  child: const Text('Sí, me cobraron'),
+                ),
+                OutlinedButton(
+                  onPressed: onNotCharged,
+                  child: const Text('No, ignorarla'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

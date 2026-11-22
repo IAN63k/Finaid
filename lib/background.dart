@@ -46,6 +46,16 @@ Future<void> backgroundMain() async {
         for (final n in pending) {
           try {
             final result = await ingest(n);
+            if (result.isFlagged) {
+              if (!settings.notifyCaptures && !settings.budgetAlerts) continue;
+              final a = CaptureAlerts.rejectedPurchase(result.transaction!);
+              await source.showCaptureNotification(
+                  title: a.title,
+                  body: a.body,
+                  budget: true,
+                  hideOnLockScreen: settings.lockEnabled);
+              continue;
+            }
             if (!result.isNewTransaction) continue;
             final transaction = result.transaction!;
             final alerts = CaptureAlerts.plan(
